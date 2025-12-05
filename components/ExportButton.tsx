@@ -1,8 +1,8 @@
-import { StockPlanRow } from '@/lib/calculatePlan';
+import { EnrichedPlanRow } from '@/lib/calculatePlan';
 import { Download } from 'lucide-react';
 
 interface ExportButtonProps {
-    data: StockPlanRow[];
+    data: EnrichedPlanRow[];
     supplierName: string;
     daysOfCoverage: number;
     analysisPeriodDays: number;
@@ -25,6 +25,7 @@ export default function ExportButton({
             'LP',
             'SKU',
             'Nazwa produktu',
+            'Alternatywa',
             'Aktualny stan',
             'Średnia dzienna sprzedaż',
             `Potrzebne na ${daysOfCoverage} dni`,
@@ -37,6 +38,7 @@ export default function ExportButton({
             index + 1,
             row.sku,
             `"${row.name}"`, // Quote to handle commas in product names
+            row.hasFallback ? `"${row.fallbackSupplierNames?.join(', ')}"` : '',
             row.currentStock,
             row.avgDailySales.toFixed(2),
             row.neededForPeriod,

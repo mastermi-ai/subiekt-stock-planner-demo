@@ -136,3 +136,34 @@ const generateSales = (): Sale[] => {
 };
 
 export const sales: Sale[] = generateSales();
+
+export type SupplierOffer = {
+  productId: string;
+  supplierId: string;
+  priority: 1 | 2 | 3; // 1 = primary, 2+ = fallback
+  isFallback: boolean;
+  note?: string;
+};
+
+// Mock Supplier Offers
+// Scenario: Some products from Supplier A have fallback to Supplier B or C
+export const supplierOffers: SupplierOffer[] = [
+  // Product 1 (Supplier A) -> Fallback Supplier B
+  { productId: 'p_1', supplierId: 'sup_1', priority: 1, isFallback: false },
+  { productId: 'p_1', supplierId: 'sup_2', priority: 2, isFallback: true, note: 'Droższy, używać gdy brak u A' },
+
+  // Product 2 (Supplier A) -> Fallback Supplier C
+  { productId: 'p_2', supplierId: 'sup_1', priority: 1, isFallback: false },
+  { productId: 'p_2', supplierId: 'sup_3', priority: 2, isFallback: true },
+
+  // Product 3 (Supplier A) -> No fallback
+  { productId: 'p_3', supplierId: 'sup_1', priority: 1, isFallback: false },
+
+  // Product 6 (Supplier B) -> Fallback Supplier A
+  { productId: 'p_6', supplierId: 'sup_2', priority: 1, isFallback: false },
+  { productId: 'p_6', supplierId: 'sup_1', priority: 2, isFallback: true, note: 'Dłuższy czas dostawy' },
+
+  // Product 11 (Supplier C) -> Fallback Supplier A
+  { productId: 'p_11', supplierId: 'sup_3', priority: 1, isFallback: false },
+  { productId: 'p_11', supplierId: 'sup_1', priority: 2, isFallback: true },
+];

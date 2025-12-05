@@ -65,3 +65,42 @@ export function calculateStockPlan(input: StockPlanInput): StockPlanRow[] {
         };
     });
 }
+
+export type EnrichedPlanRow = StockPlanRow & {
+    primarySupplierId?: string;
+    fallbackSupplierIds?: string[];
+    fallbackSupplierNames?: string[]; // Helper for display
+    hasFallback: boolean;
+    fallbackNote?: string;
+};
+
+export function enrichWithSupplierOffers(plan: StockPlanRow[], offers: SupplierOffer[], suppliers: Supplier[]): EnrichedPlanRow[] {
+    return plan.map(row => {
+        const productOffers = offers.filter(o => o.productId === row.productId);
+
+        // Find primary (priority 1)
+        const primary = productOffers.find(o => o.priority === 1);
+
+        // Find fallbacks (priority > 1, isFallback = true)
+        const fallbacks = productOffers
+            .filter(o => o.isFallback)
+            .sort((a, b) => a.priority - b.priority);
+
+        const fallbackSupplierIds = fallbacks.map(f => f.supplierId);
+
+        // Map IDs to Names for easier display
+        const fallbackSupplierNames = fallbackSupplierIds.map(id => {
+            const sup = suppliers.find(s => s.id === id);
+            return sup ? sup.name : id; // Use the provided suppliers array
+        });
+
+        return {
+            ...row,
+            primarySupplierId: primary?.supplierId,
+            fallbackSupplierIds,
+            fallbackSupplierNames,
+            hasFallback: fallbacks.length > 0,
+            fallbackNote: fallbacks[0]?.note // Take note from the first fallback
+        };
+    });
+}

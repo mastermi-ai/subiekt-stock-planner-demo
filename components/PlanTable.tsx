@@ -1,9 +1,9 @@
-import { StockPlanRow } from '@/lib/calculatePlan';
+import { EnrichedPlanRow } from '@/lib/calculatePlan';
 import { useState, useMemo } from 'react';
-import { Search, ArrowUpDown } from 'lucide-react';
+import { Search, ArrowUpDown, Filter } from 'lucide-react';
 
 interface PlanTableProps {
-    data: StockPlanRow[];
+    data: EnrichedPlanRow[];
     daysOfCoverage: number;
 }
 
@@ -12,12 +12,13 @@ type SortOption = 'order_desc' | 'name_asc' | 'name_desc' | 'sku_asc' | 'sku_des
 export default function PlanTable({ data, daysOfCoverage }: PlanTableProps) {
     const [searchTerm, setSearchTerm] = useState('');
     const [sortBy, setSortBy] = useState<SortOption>('order_desc');
+    const [showOnlyFallback, setShowOnlyFallback] = useState(false);
 
     // Filter and sort data
     const processedData = useMemo(() => {
         let result = [...data];
 
-        // Filter
+        // Filter by search term
         if (searchTerm) {
             const lowerTerm = searchTerm.toLowerCase();
             result = result.filter(
@@ -25,6 +26,11 @@ export default function PlanTable({ data, daysOfCoverage }: PlanTableProps) {
                     row.name.toLowerCase().includes(lowerTerm) ||
                     row.sku.toLowerCase().includes(lowerTerm)
             );
+        }
+
+        // Filter by fallback existence
+        if (showOnlyFallback) {
+            result = result.filter(row => row.hasFallback);
         }
 
         // Sort
@@ -46,7 +52,7 @@ export default function PlanTable({ data, daysOfCoverage }: PlanTableProps) {
         });
 
         return result;
-    }, [data, searchTerm, sortBy]);
+    }, [data, searchTerm, sortBy, showOnlyFallback]);
 
     if (data.length === 0) {
         return (
@@ -72,20 +78,36 @@ export default function PlanTable({ data, daysOfCoverage }: PlanTableProps) {
                     />
                 </div>
 
-                {/* Sort */}
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <ArrowUpDown size={18} className="text-gray-500" />
-                    <select
-                        value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value as SortOption)}
-                        className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white"
-                    >
-                        <option value="order_desc">Proponowane zamówienie (malejąco)</option>
-                        <option value="name_asc">Nazwa (A-Z)</option>
-                        <option value="name_desc">Nazwa (Z-A)</option>
-                        <option value="sku_asc">SKU (A-Z)</option>
-                        <option value="sku_desc">SKU (Z-A)</option>
-                    </select>
+                <div className="flex flex-wrap items-center gap-4 w-full sm:w-auto">
+                    {/* Fallback Filter */}
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <input
+                            type="checkbox"
+                            checked={showOnlyFallback}
+                            onChange={(e) => setShowOnlyFallback(e.target.checked)}
+                            className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                        />
+                        <span className="text-sm text-gray-700 flex items-center gap-1">
+                            <Filter size={14} />
+                            Pokaż tylko z alternatywą
+                        </span>
+                    </label>
+
+                    {/* Sort */}
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <ArrowUpDown size={18} className="text-gray-500" />
+                        <select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value as SortOption)}
+                            className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white"
+                        >
+                            <option value="order_desc">Proponowane zamówienie (malejąco)</option>
+                            <option value="name_asc">Nazwa (A-Z)</option>
+                            <option value="name_desc">Nazwa (Z-A)</option>
+                            <option value="sku_asc">SKU (A-Z)</option>
+                            <option value="sku_desc">SKU (Z-A)</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -97,6 +119,7 @@ export default function PlanTable({ data, daysOfCoverage }: PlanTableProps) {
                             <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">LP</th>
                             <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">SKU</th>
                             <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Nazwa produktu</th>
+                            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Alternatywa</th>
                             <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Aktualny stan</th>
                             <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Średnia dzienna sprzedaż</th>
                             <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">
@@ -110,12 +133,27 @@ export default function PlanTable({ data, daysOfCoverage }: PlanTableProps) {
                             processedData.map((row, index) => (
                                 <tr
                                     key={row.productId}
-                                    className={`border-b border-gray-200 last:border-0 ${row.toOrder > 0 ? 'bg-yellow-50' : 'bg-white'
-                                        } hover:bg-gray-50 transition-colors`}
+                                    className={`border-b border-gray-200 last:border-0 ${row.toOrder > 0 ? 'bg-yellow-50' : 'bg-white'} hover:bg-gray-50 transition-colors`}
                                 >
                                     <td className="px-4 py-3 text-sm text-gray-700">{index + 1}</td>
                                     <td className="px-4 py-3 text-sm font-mono text-gray-700">{row.sku}</td>
                                     <td className="px-4 py-3 text-sm text-gray-700">{row.name}</td>
+                                    <td className="px-4 py-3 text-sm text-gray-700">
+                                        {row.hasFallback ? (
+                                            <div className="flex flex-col">
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 w-fit">
+                                                    {row.fallbackSupplierNames?.join(', ')}
+                                                </span>
+                                                {row.fallbackNote && (
+                                                    <span className="text-xs text-gray-500 mt-1 italic">
+                                                        {row.fallbackNote}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <span className="text-gray-400">—</span>
+                                        )}
+                                    </td>
                                     <td className="px-4 py-3 text-sm text-right text-gray-700">{row.currentStock}</td>
                                     <td className="px-4 py-3 text-sm text-right text-gray-700">{row.avgDailySales.toFixed(2)}</td>
                                     <td className="px-4 py-3 text-sm text-right text-gray-700">{row.neededForPeriod}</td>
@@ -126,7 +164,7 @@ export default function PlanTable({ data, daysOfCoverage }: PlanTableProps) {
                             ))
                         ) : (
                             <tr>
-                                <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                                <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
                                     Brak wyników dla podanych kryteriów wyszukiwania.
                                 </td>
                             </tr>

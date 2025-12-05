@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { suppliers, products, sales, branches } from '@/lib/mockData';
-import { calculateStockPlan, StockPlanRow } from '@/lib/calculatePlan';
+import { suppliers, products, sales, branches, supplierOffers } from '@/lib/mockData';
+import { calculateStockPlan, enrichWithSupplierOffers, EnrichedPlanRow } from '@/lib/calculatePlan';
 import SupplierSelect from '@/components/SupplierSelect';
 import PlanForm from '@/components/PlanForm';
 import PlanTable from '@/components/PlanTable';
@@ -14,7 +14,7 @@ export default function Home() {
   const [selectedBranchIds, setSelectedBranchIds] = useState<string[]>([]);
   const [daysOfCoverage, setDaysOfCoverage] = useState(30);
   const [analysisPeriodDays, setAnalysisPeriodDays] = useState(90);
-  const [planData, setPlanData] = useState<StockPlanRow[]>([]);
+  const [planData, setPlanData] = useState<EnrichedPlanRow[]>([]);
   const [isCalculating, setIsCalculating] = useState(false);
   const [validationError, setValidationError] = useState('');
 
@@ -36,9 +36,9 @@ export default function Home() {
     setValidationError('');
     setIsCalculating(true);
 
-    // Simulate async calculation
-    setTimeout(() => {
-      const result = calculateStockPlan({
+    try {
+      // 1. Calculate basic plan
+      const basicPlan = calculateStockPlan({
         products,
         sales,
         supplierId: selectedSupplier,
@@ -46,9 +46,21 @@ export default function Home() {
         analysisPeriodDays,
         branchIds: selectedBranchIds
       });
-      setPlanData(result);
+
+      console.log('Basic plan calculated:', basicPlan.length);
+
+      // 2. Enrich with supplier offers (alternatives)
+      const enrichedPlan = enrichWithSupplierOffers(basicPlan, supplierOffers, suppliers);
+
+      console.log('Enriched plan calculated:', enrichedPlan.length);
+
+      setPlanData(enrichedPlan);
+    } catch (error) {
+      console.error('Error calculating plan:', error);
+      setValidationError('Wystąpił błąd podczas obliczania planu.');
+    } finally {
       setIsCalculating(false);
-    }, 300);
+    }
   };
 
   const selectedSupplierName = suppliers.find(s => s.id === selectedSupplier)?.name || '';
