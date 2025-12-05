@@ -19,7 +19,7 @@ export default function PdfButton({
     daysOfCoverage,
     analysisPeriodDays
 }: PdfButtonProps) {
-    const handleGeneratePdf = () => {
+    const handleGeneratePdf = async () => {
         // Filter for items to order
         const itemsToOrder = data.filter(row => row.toOrder > 0);
 
@@ -28,56 +28,81 @@ export default function PdfButton({
             return;
         }
 
-        // Initialize PDF
-        const doc = new jsPDF();
+        try {
+            // Initialize PDF
+            const doc = new jsPDF();
 
-        // Add Polish font support (using standard font for now, but handling encoding via text)
-        // Note: Standard fonts might not support all Polish chars perfectly without custom font loading
-        // For this demo, we'll rely on standard encoding which usually works fine for basic chars
+            // Load font supporting Polish characters (Roboto)
+            const fontUrl = 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Regular.ttf';
+            const response = await fetch(fontUrl);
+            const buffer = await response.arrayBuffer();
 
-        // Header
-        doc.setFontSize(18);
-        doc.text(`Zamówienie - ${supplierName}`, 14, 20);
+            // Convert to base64
+            const base64Font = btoa(
+                new Uint8Array(buffer)
+                    .reduce((data, byte) => data + String.fromCharCode(byte), '')
+            );
 
-        doc.setFontSize(11);
-        doc.text(`Data wygenerowania: ${new Date().toLocaleDateString('pl-PL')}`, 14, 30);
+            // Add font to VFS and register it
+            doc.addFileToVFS('Roboto-Regular.ttf', base64Font);
+            doc.addFont('Roboto-Regular.ttf', 'Roboto', 'normal');
+            doc.setFont('Roboto');
 
-        const branchNames = selectedBranches.map(b => b.name).join(', ');
-        doc.text(`Oddziały: ${branchNames}`, 14, 36);
+            // Header
+            doc.setFontSize(18);
+            doc.text(`Zamówienie - ${supplierName}`, 14, 20);
 
-        doc.text(`Planowany zapas: ${daysOfCoverage} dni`, 14, 42);
-        doc.text(`Okres analizy: ${analysisPeriodDays} dni`, 14, 48);
+            doc.setFontSize(11);
+            doc.text(`Data wygenerowania: ${new Date().toLocaleDateString('pl-PL')}`, 14, 30);
 
-        // Table
-        const tableData = itemsToOrder.map((row, index) => [
-            index + 1,
-            row.sku,
-            row.name,
-            row.currentStock,
-            row.neededForPeriod,
-            row.toOrder
-        ]);
+            const branchNames = selectedBranches.map(b => b.name).join(', ');
+            doc.text(`Oddziały: ${branchNames}`, 14, 36);
 
-        autoTable(doc, {
-            startY: 55,
-            head: [['LP', 'SKU', 'Nazwa produktu', 'Aktualny stan', `Potrzebne (${daysOfCoverage} dni)`, 'Do zamówienia']],
-            body: tableData,
-            theme: 'grid',
-            headStyles: { fillColor: [41, 128, 185], textColor: 255 },
-            styles: { fontSize: 10, cellPadding: 3 },
-            columnStyles: {
-                0: { cellWidth: 15 }, // LP
-                1: { cellWidth: 30 }, // SKU
-                2: { cellWidth: 'auto' }, // Name
-                3: { cellWidth: 25, halign: 'right' }, // Stock
-                4: { cellWidth: 30, halign: 'right' }, // Needed
-                5: { cellWidth: 30, halign: 'right', fontStyle: 'bold' } // To Order
-            }
-        });
+            doc.text(`Planowany zapas: ${daysOfCoverage} dni`, 14, 42);
+            doc.text(`Okres analizy: ${analysisPeriodDays} dni`, 14, 48);
 
-        // Save
-        const filename = `zamowienie_${supplierName.replace(/\s+/g, '_')}_${daysOfCoverage}_dni.pdf`;
-        doc.save(filename);
+            // Table
+            const tableData = itemsToOrder.map((row, index) => [
+                index + 1,
+                row.sku,
+                row.name,
+                row.currentStock,
+                row.neededForPeriod,
+                row.toOrder
+            ]);
+
+            autoTable(doc, {
+                startY: 55,
+                head: [['LP', 'SKU', 'Nazwa produktu', 'Aktualny stan', `Potrzebne (${daysOfCoverage} dni)`, 'Do zamówienia']],
+                body: tableData,
+                theme: 'grid',
+                headStyles: {
+                    fillColor: [41, 128, 185],
+                    textColor: 255,
+                    font: 'Roboto' // Use the custom font in header
+                },
+                styles: {
+                    fontSize: 10,
+                    cellPadding: 3,
+                    font: 'Roboto' // Use the custom font in body
+                },
+                columnStyles: {
+                    0: { cellWidth: 15 }, // LP
+                    1: { cellWidth: 30 }, // SKU
+                    2: { cellWidth: 'auto' }, // Name
+                    3: { cellWidth: 25, halign: 'right' }, // Stock
+                    4: { cellWidth: 30, halign: 'right' }, // Needed
+                    5: { cellWidth: 30, halign: 'right', fontStyle: 'bold' } // To Order
+                }
+            });
+
+            // Save
+            const filename = `zamowienie_${supplierName.replace(/\s+/g, '_')}_${daysOfCoverage}_dni.pdf`;
+            doc.save(filename);
+        } catch (error) {
+            console.error('Error generating PDF:', error);
+            alert('Wystąpił błąd podczas generowania PDF. Sprawdź konsolę.');
+        }
     };
 
     const itemsToOrderCount = data.filter(row => row.toOrder > 0).length;
