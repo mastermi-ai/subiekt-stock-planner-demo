@@ -1,15 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { suppliers, products, sales } from '@/lib/mockData';
+import { suppliers, products, sales, branches } from '@/lib/mockData';
 import { calculateStockPlan, StockPlanRow } from '@/lib/calculatePlan';
 import SupplierSelect from '@/components/SupplierSelect';
 import PlanForm from '@/components/PlanForm';
 import PlanTable from '@/components/PlanTable';
 import ExportButton from '@/components/ExportButton';
+import PdfButton from '@/components/PdfButton';
 
 export default function Home() {
   const [selectedSupplier, setSelectedSupplier] = useState('');
+  const [selectedBranchIds, setSelectedBranchIds] = useState<string[]>([]);
   const [daysOfCoverage, setDaysOfCoverage] = useState(30);
   const [analysisPeriodDays, setAnalysisPeriodDays] = useState(90);
   const [planData, setPlanData] = useState<StockPlanRow[]>([]);
@@ -22,6 +24,10 @@ export default function Home() {
       setValidationError('Proszę wybrać dostawcę');
       return;
     }
+    if (selectedBranchIds.length === 0) {
+      setValidationError('Proszę wybrać co najmniej jeden oddział');
+      return;
+    }
     if (daysOfCoverage < 1 || analysisPeriodDays < 7) {
       setValidationError('Nieprawidłowe wartości parametrów');
       return;
@@ -30,14 +36,15 @@ export default function Home() {
     setValidationError('');
     setIsCalculating(true);
 
-    // Simulate async calculation (even though it's fast)
+    // Simulate async calculation
     setTimeout(() => {
       const result = calculateStockPlan({
         products,
         sales,
         supplierId: selectedSupplier,
         daysOfCoverage,
-        analysisPeriodDays
+        analysisPeriodDays,
+        branchIds: selectedBranchIds
       });
       setPlanData(result);
       setIsCalculating(false);
@@ -45,6 +52,7 @@ export default function Home() {
   };
 
   const selectedSupplierName = suppliers.find(s => s.id === selectedSupplier)?.name || '';
+  const selectedBranches = branches.filter(b => selectedBranchIds.includes(b.id));
 
   return (
     <div className="min-h-screen py-8 px-4">
@@ -72,6 +80,9 @@ export default function Home() {
             />
 
             <PlanForm
+              branches={branches}
+              selectedBranchIds={selectedBranchIds}
+              onSelectedBranchIdsChange={setSelectedBranchIds}
               daysOfCoverage={daysOfCoverage}
               analysisPeriodDays={analysisPeriodDays}
               onDaysOfCoverageChange={setDaysOfCoverage}
@@ -96,16 +107,25 @@ export default function Home() {
         {/* Results Card */}
         {planData.length > 0 && (
           <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
               <h2 className="text-xl font-semibold text-gray-800">
                 Wyniki dla: {selectedSupplierName}
               </h2>
-              <ExportButton
-                data={planData}
-                supplierName={selectedSupplierName}
-                daysOfCoverage={daysOfCoverage}
-                analysisPeriodDays={analysisPeriodDays}
-              />
+              <div className="flex flex-wrap gap-3">
+                <ExportButton
+                  data={planData}
+                  supplierName={selectedSupplierName}
+                  daysOfCoverage={daysOfCoverage}
+                  analysisPeriodDays={analysisPeriodDays}
+                />
+                <PdfButton
+                  data={planData}
+                  supplierName={selectedSupplierName}
+                  selectedBranches={selectedBranches}
+                  daysOfCoverage={daysOfCoverage}
+                  analysisPeriodDays={analysisPeriodDays}
+                />
+              </div>
             </div>
 
             <PlanTable data={planData} daysOfCoverage={daysOfCoverage} />

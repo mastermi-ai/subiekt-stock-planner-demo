@@ -6,20 +6,21 @@ export type StockPlanInput = {
     supplierId: string;
     daysOfCoverage: number; // X
     analysisPeriodDays: number; // Analysis period in days
+    branchIds: string[]; // Selected branches
 };
 
 export type StockPlanRow = {
     productId: string;
     sku: string;
     name: string;
-    currentStock: number;
+    currentStock: number; // Sum of stock from selected branches
     avgDailySales: number;
     neededForPeriod: number; // Needed for X days
     toOrder: number; // Quantity to order
 };
 
 export function calculateStockPlan(input: StockPlanInput): StockPlanRow[] {
-    const { products, sales, supplierId, daysOfCoverage, analysisPeriodDays } = input;
+    const { products, sales, supplierId, daysOfCoverage, analysisPeriodDays, branchIds } = input;
 
     // 1. Filter products by supplier
     const supplierProducts = products.filter(p => p.supplierId === supplierId);
@@ -40,20 +41,25 @@ export function calculateStockPlan(input: StockPlanInput): StockPlanRow[] {
         // 3. Calculate metrics
         const totalSold = productSales.reduce((sum, sale) => sum + sale.quantity, 0);
 
-        // Avoid division by zero if analysisPeriodDays is somehow 0 (though UI should prevent this)
+        // Avoid division by zero
         const effectiveDays = Math.max(1, analysisPeriodDays);
 
         const avgDailySales = totalSold / effectiveDays;
 
+        // Calculate current stock based on selected branches
+        const currentStock = branchIds.reduce((sum, branchId) => {
+            return sum + (product.stockByBranch[branchId] || 0);
+        }, 0);
+
         const neededForPeriod = Math.ceil(avgDailySales * daysOfCoverage);
-        const toOrder = Math.max(0, neededForPeriod - product.currentStock);
+        const toOrder = Math.max(0, neededForPeriod - currentStock);
 
         return {
             productId: product.id,
             sku: product.sku,
             name: product.name,
-            currentStock: product.currentStock,
-            avgDailySales: Number(avgDailySales.toFixed(2)), // Round to 2 decimal places for display consistency
+            currentStock,
+            avgDailySales: Number(avgDailySales.toFixed(2)),
             neededForPeriod,
             toOrder
         };
