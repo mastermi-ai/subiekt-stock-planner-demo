@@ -1,4 +1,4 @@
-import { Product, Sale } from './mockData';
+import { Product, Sale, SupplierOffer, Supplier } from './mockData';
 
 export type StockPlanInput = {
     products: Product[];

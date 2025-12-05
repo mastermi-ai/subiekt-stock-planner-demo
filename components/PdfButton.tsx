@@ -66,7 +66,7 @@ export default function PdfButton({
                 index + 1,
                 row.sku,
                 row.name,
-                row.hasFallback ? row.fallbackSupplierNames?.join(', ') : '',
+                row.hasFallback ? (row.fallbackSupplierNames?.join(', ') || '') : '',
                 row.currentStock,
                 row.neededForPeriod,
                 row.toOrder
