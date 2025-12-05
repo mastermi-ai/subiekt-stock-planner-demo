@@ -1,9 +1,9 @@
-import { EnrichedPlanRow } from '@/lib/calculatePlan';
+import { StockPlanRow } from '@/lib/calculatePlan';
 import { useState, useMemo } from 'react';
-import { Search, ArrowUpDown, Filter } from 'lucide-react';
+import { Search, ArrowUpDown } from 'lucide-react';
 
 interface PlanTableProps {
-    data: EnrichedPlanRow[];
+    data: StockPlanRow[];
     daysOfCoverage: number;
 }
 
@@ -12,7 +12,6 @@ type SortOption = 'order_desc' | 'name_asc' | 'name_desc' | 'sku_asc' | 'sku_des
 export default function PlanTable({ data, daysOfCoverage }: PlanTableProps) {
     const [searchTerm, setSearchTerm] = useState('');
     const [sortBy, setSortBy] = useState<SortOption>('order_desc');
-    const [showOnlyFallback, setShowOnlyFallback] = useState(false);
 
     // Filter and sort data
     const processedData = useMemo(() => {
@@ -26,11 +25,6 @@ export default function PlanTable({ data, daysOfCoverage }: PlanTableProps) {
                     row.name.toLowerCase().includes(lowerTerm) ||
                     row.sku.toLowerCase().includes(lowerTerm)
             );
-        }
-
-        // Filter by fallback existence
-        if (showOnlyFallback) {
-            result = result.filter(row => row.hasFallback);
         }
 
         // Sort
@@ -52,7 +46,7 @@ export default function PlanTable({ data, daysOfCoverage }: PlanTableProps) {
         });
 
         return result;
-    }, [data, searchTerm, sortBy, showOnlyFallback]);
+    }, [data, searchTerm, sortBy]);
 
     if (data.length === 0) {
         return (
@@ -79,20 +73,6 @@ export default function PlanTable({ data, daysOfCoverage }: PlanTableProps) {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-4 w-full sm:w-auto">
-                    {/* Fallback Filter */}
-                    <label className="flex items-center gap-2 cursor-pointer select-none">
-                        <input
-                            type="checkbox"
-                            checked={showOnlyFallback}
-                            onChange={(e) => setShowOnlyFallback(e.target.checked)}
-                            className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                        />
-                        <span className="text-sm text-gray-700 flex items-center gap-1">
-                            <Filter size={14} />
-                            Pokaż tylko z alternatywą
-                        </span>
-                    </label>
-
                     {/* Sort */}
                     <div className="flex items-center gap-2 w-full sm:w-auto">
                         <ArrowUpDown size={18} className="text-gray-500" />
@@ -119,13 +99,12 @@ export default function PlanTable({ data, daysOfCoverage }: PlanTableProps) {
                             <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">LP</th>
                             <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">SKU</th>
                             <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Nazwa produktu</th>
-                            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Alternatywa</th>
                             <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Aktualny stan</th>
                             <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Średnia dzienna sprzedaż</th>
                             <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">
                                 Potrzebne na {daysOfCoverage} dni
                             </th>
-                            <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Proponowane zamówienie</th>
+                            <th className="px-4 py-3 text-right text-sm font-semibold text-gray-900">Proponowane zamówienie</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -138,22 +117,6 @@ export default function PlanTable({ data, daysOfCoverage }: PlanTableProps) {
                                     <td className="px-4 py-3 text-sm text-gray-700">{index + 1}</td>
                                     <td className="px-4 py-3 text-sm font-mono text-gray-700">{row.sku}</td>
                                     <td className="px-4 py-3 text-sm text-gray-700">{row.name}</td>
-                                    <td className="px-4 py-3 text-sm text-gray-700">
-                                        {row.hasFallback ? (
-                                            <div className="flex flex-col">
-                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 w-fit">
-                                                    {row.fallbackSupplierNames?.join(', ')}
-                                                </span>
-                                                {row.fallbackNote && (
-                                                    <span className="text-xs text-gray-500 mt-1 italic">
-                                                        {row.fallbackNote}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        ) : (
-                                            <span className="text-gray-400">—</span>
-                                        )}
-                                    </td>
                                     <td className="px-4 py-3 text-sm text-right text-gray-700">{row.currentStock}</td>
                                     <td className="px-4 py-3 text-sm text-right text-gray-700">{row.avgDailySales.toFixed(2)}</td>
                                     <td className="px-4 py-3 text-sm text-right text-gray-700">{row.neededForPeriod}</td>
@@ -164,7 +127,7 @@ export default function PlanTable({ data, daysOfCoverage }: PlanTableProps) {
                             ))
                         ) : (
                             <tr>
-                                <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                                <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
                                     Brak wyników dla podanych kryteriów wyszukiwania.
                                 </td>
                             </tr>

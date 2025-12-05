@@ -1,11 +1,11 @@
-import { EnrichedPlanRow } from '@/lib/calculatePlan';
+import { StockPlanRow } from '@/lib/calculatePlan';
 import { FileText } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Branch } from '@/lib/mockData';
 
 interface PdfButtonProps {
-    data: EnrichedPlanRow[];
+    data: StockPlanRow[];
     supplierName: string;
     selectedBranches: Branch[];
     daysOfCoverage: number;
@@ -66,7 +66,6 @@ export default function PdfButton({
                 index + 1,
                 row.sku,
                 row.name,
-                row.hasFallback ? (row.fallbackSupplierNames?.join(', ') || '') : '',
                 row.currentStock,
                 row.neededForPeriod,
                 row.toOrder
@@ -74,7 +73,7 @@ export default function PdfButton({
 
             autoTable(doc, {
                 startY: 55,
-                head: [['LP', 'SKU', 'Nazwa produktu', 'Alternatywa', 'Aktualny stan', `Potrzebne (${daysOfCoverage} dni)`, 'Do zamówienia']],
+                head: [['LP', 'SKU', 'Nazwa produktu', 'Aktualny stan', `Potrzebne (${daysOfCoverage} dni)`, 'Do zamówienia']],
                 body: tableData,
                 theme: 'grid',
                 headStyles: {
@@ -91,10 +90,9 @@ export default function PdfButton({
                     0: { cellWidth: 10 }, // LP
                     1: { cellWidth: 25 }, // SKU
                     2: { cellWidth: 'auto' }, // Name
-                    3: { cellWidth: 30 }, // Alternative
-                    4: { cellWidth: 20, halign: 'right' }, // Stock
-                    5: { cellWidth: 25, halign: 'right' }, // Needed
-                    6: { cellWidth: 25, halign: 'right', fontStyle: 'bold' } // To Order
+                    3: { cellWidth: 20, halign: 'right' }, // Stock
+                    4: { cellWidth: 25, halign: 'right' }, // Needed
+                    5: { cellWidth: 25, halign: 'right', fontStyle: 'bold' } // To Order
                 }
             });
 

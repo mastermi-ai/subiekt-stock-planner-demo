@@ -4,18 +4,20 @@ Aplikacja webowa do planowania zamówień na podstawie historycznej sprzedaży. 
 
 ## Funkcjonalności
 
-- 📊 Wybór dostawcy z listy
+- 📊 Wybór dostawcy z listy (wyszukiwanie po nazwie i NIP)
 - 📅 Konfiguracja okresu planowania (dni zapasu)
 - 📈 Analiza historycznej sprzedaży
 - 📋 Wyświetlanie proponowanych zamówień
-- 📥 Eksport do pliku Excel
+- 📥 Eksport do pliku CSV
+- 📄 Generowanie PDF z zamówieniem
 
 ## Technologie
 
 - **Next.js 14+** (App Router)
 - **TypeScript**
 - **TailwindCSS**
-- **SheetJS (xlsx)** - eksport do Excela
+- **SheetJS (xlsx)** - eksport do CSV
+- **jsPDF** - generowanie PDF
 - **Lucide React** - ikony
 
 ## Uruchomienie lokalnie
@@ -68,7 +70,8 @@ subiekt-planning/
 │   ├── SupplierSelect.tsx
 │   ├── PlanForm.tsx
 │   ├── PlanTable.tsx
-│   └── ExportButton.tsx
+│   ├── ExportButton.tsx
+│   └── PdfButton.tsx
 ├── lib/
 │   ├── mockData.ts       # Dane mock (dostawcy, produkty, sprzedaż)
 │   └── calculatePlan.ts  # Logika wyliczeń
@@ -88,9 +91,9 @@ Dla każdego produktu:
 ### Dane mock
 
 Aplikacja zawiera:
-- 3 dostawców
-- 15 produktów
-- ~120 dni historii sprzedaży
+- 500 dostawców (generowanych dynamicznie)
+- Produkty z przypisanymi stanami magazynowymi w oddziałach
+- Historię sprzedaży
 
 ## Przyszła integracja z Subiekt nexo PRO
 

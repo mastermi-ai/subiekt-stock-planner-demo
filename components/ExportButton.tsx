@@ -1,60 +1,38 @@
-import { EnrichedPlanRow } from '@/lib/calculatePlan';
+import { StockPlanRow } from '@/lib/calculatePlan';
 import { Download } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 interface ExportButtonProps {
-    data: EnrichedPlanRow[];
+    data: StockPlanRow[];
     supplierName: string;
     daysOfCoverage: number;
     analysisPeriodDays: number;
 }
 
-export default function ExportButton({
-    data,
-    supplierName,
-    daysOfCoverage,
-    analysisPeriodDays
-}: ExportButtonProps) {
+export default function ExportButton({ data, supplierName, daysOfCoverage, analysisPeriodDays }: ExportButtonProps) {
     const handleExportCSV = () => {
         if (data.length === 0) return;
 
-        // Sort data by toOrder descending (same as table)
-        const sortedData = [...data].sort((a, b) => b.toOrder - a.toOrder);
+        // Prepare data for CSV
+        const csvData = data.map((row, index) => ({
+            'LP': index + 1,
+            'SKU': row.sku,
+            'Nazwa produktu': row.name,
+            'Aktualny stan': row.currentStock,
+            'Średnia dzienna sprzedaż': row.avgDailySales.toFixed(2),
+            [`Potrzebne na ${daysOfCoverage} dni`]: row.neededForPeriod,
+            'Proponowane zamówienie': row.toOrder
+        }));
 
-        // Create CSV header
-        const headers = [
-            'LP',
-            'SKU',
-            'Nazwa produktu',
-            'Alternatywa',
-            'Aktualny stan',
-            'Średnia dzienna sprzedaż',
-            `Potrzebne na ${daysOfCoverage} dni`,
-            'Proponowane zamówienie',
-            'Okres analizy (dni)'
-        ];
+        // Create worksheet
+        const ws = XLSX.utils.json_to_sheet(csvData);
 
-        // Create CSV rows
-        const rows = sortedData.map((row, index) => [
-            index + 1,
-            row.sku,
-            `"${row.name}"`, // Quote to handle commas in product names
-            row.hasFallback ? `"${row.fallbackSupplierNames?.join(', ')}"` : '',
-            row.currentStock,
-            row.avgDailySales.toFixed(2),
-            row.neededForPeriod,
-            row.toOrder,
-            analysisPeriodDays
-        ]);
+        // Create CSV content
+        const csvContent = XLSX.utils.sheet_to_csv(ws);
 
-        // Combine header and rows
-        const csvContent = [
-            headers.join(','),
-            ...rows.map(row => row.join(','))
-        ].join('\n');
-
-        // Add BOM for proper Polish characters encoding in Excel
-        const BOM = '\uFEFF';
-        const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+        // Add BOM for Excel to recognize UTF-8
+        const bom = '\uFEFF';
+        const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
 
         // Create download link
         const url = URL.createObjectURL(blob);

@@ -1,4 +1,4 @@
-import { Product, Sale, SupplierOffer, Supplier } from './mockData';
+import { Product, Sale } from './mockData';
 
 export type StockPlanInput = {
     products: Product[];
@@ -13,45 +13,51 @@ export type StockPlanRow = {
     productId: string;
     sku: string;
     name: string;
-    currentStock: number; // Sum of stock from selected branches
+    currentStock: number;
     avgDailySales: number;
-    neededForPeriod: number; // Needed for X days
-    toOrder: number; // Quantity to order
+    neededForPeriod: number;
+    toOrder: number;
 };
 
-export function calculateStockPlan(input: StockPlanInput): StockPlanRow[] {
-    const { products, sales, supplierId, daysOfCoverage, analysisPeriodDays, branchIds } = input;
-
+export function calculateStockPlan({
+    products,
+    sales,
+    supplierId,
+    daysOfCoverage,
+    analysisPeriodDays,
+    branchIds
+}: StockPlanInput): StockPlanRow[] {
     // 1. Filter products by supplier
     const supplierProducts = products.filter(p => p.supplierId === supplierId);
 
-    // Calculate cutoff date for analysis
-    const today = new Date();
-    const cutoffDate = new Date(today);
-    cutoffDate.setDate(cutoffDate.getDate() - analysisPeriodDays);
-
+    // 2. Calculate plan for each product
     return supplierProducts.map(product => {
-        // 2. Filter sales for this product within the analysis period
-        const productSales = sales.filter(sale => {
-            if (sale.productId !== product.id) return false;
-            const saleDate = new Date(sale.date);
-            return saleDate >= cutoffDate && saleDate <= today;
-        });
-
-        // 3. Calculate metrics
-        const totalSold = productSales.reduce((sum, sale) => sum + sale.quantity, 0);
-
-        // Avoid division by zero
-        const effectiveDays = Math.max(1, analysisPeriodDays);
-
-        const avgDailySales = totalSold / effectiveDays;
-
-        // Calculate current stock based on selected branches
+        // Calculate current stock (sum of selected branches)
         const currentStock = branchIds.reduce((sum, branchId) => {
             return sum + (product.stockByBranch[branchId] || 0);
         }, 0);
 
+        // Filter sales for this product within the analysis period
+        const now = new Date();
+        const cutoffDate = new Date();
+        cutoffDate.setDate(now.getDate() - analysisPeriodDays);
+
+        const productSales = sales.filter(s => {
+            const saleDate = new Date(s.date);
+            return s.productId === product.id && saleDate >= cutoffDate;
+        });
+
+        // Calculate total quantity sold
+        const totalSold = productSales.reduce((sum, s) => sum + s.quantity, 0);
+
+        // Calculate average daily sales
+        // Prevent division by zero if analysisPeriodDays is 0 (though it shouldn't be)
+        const avgDailySales = analysisPeriodDays > 0 ? totalSold / analysisPeriodDays : 0;
+
+        // Calculate needed quantity for coverage period
         const neededForPeriod = Math.ceil(avgDailySales * daysOfCoverage);
+
+        // Calculate quantity to order
         const toOrder = Math.max(0, neededForPeriod - currentStock);
 
         return {
@@ -59,48 +65,9 @@ export function calculateStockPlan(input: StockPlanInput): StockPlanRow[] {
             sku: product.sku,
             name: product.name,
             currentStock,
-            avgDailySales: Number(avgDailySales.toFixed(2)),
+            avgDailySales,
             neededForPeriod,
             toOrder
-        };
-    });
-}
-
-export type EnrichedPlanRow = StockPlanRow & {
-    primarySupplierId?: string;
-    fallbackSupplierIds?: string[];
-    fallbackSupplierNames?: string[]; // Helper for display
-    hasFallback: boolean;
-    fallbackNote?: string;
-};
-
-export function enrichWithSupplierOffers(plan: StockPlanRow[], offers: SupplierOffer[], suppliers: Supplier[]): EnrichedPlanRow[] {
-    return plan.map(row => {
-        const productOffers = offers.filter(o => o.productId === row.productId);
-
-        // Find primary (priority 1)
-        const primary = productOffers.find(o => o.priority === 1);
-
-        // Find fallbacks (priority > 1, isFallback = true)
-        const fallbacks = productOffers
-            .filter(o => o.isFallback)
-            .sort((a, b) => a.priority - b.priority);
-
-        const fallbackSupplierIds = fallbacks.map(f => f.supplierId);
-
-        // Map IDs to Names for easier display
-        const fallbackSupplierNames = fallbackSupplierIds.map(id => {
-            const sup = suppliers.find(s => s.id === id);
-            return sup ? sup.name : id; // Use the provided suppliers array
-        });
-
-        return {
-            ...row,
-            primarySupplierId: primary?.supplierId,
-            fallbackSupplierIds,
-            fallbackSupplierNames,
-            hasFallback: fallbacks.length > 0,
-            fallbackNote: fallbacks[0]?.note // Take note from the first fallback
         };
     });
 }
