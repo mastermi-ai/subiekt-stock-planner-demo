@@ -1,15 +1,24 @@
 'use client';
 
-import { useState } from 'react';
-import { suppliers, products, sales, branches } from '@/lib/mockData';
+import { useState, useEffect } from 'react';
 import { calculateStockPlan, StockPlanRow } from '@/lib/calculatePlan';
 import SupplierSelect from '@/components/SupplierSelect';
 import PlanForm from '@/components/PlanForm';
 import PlanTable from '@/components/PlanTable';
 import ExportButton from '@/components/ExportButton';
 import PdfButton from '@/components/PdfButton';
+import { fetchBranches, fetchProducts, fetchSales } from '@/lib/api';
+import { Branch, Product, Sale, Supplier } from '@/lib/mockData';
 
 export default function Home() {
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [sales, setSales] = useState<Sale[]>([]);
+
+  const [isLoadingData, setIsLoadingData] = useState(true);
+  const [dataError, setDataError] = useState('');
+
   const [selectedSupplier, setSelectedSupplier] = useState('');
   const [selectedBranchIds, setSelectedBranchIds] = useState<string[]>([]);
   const [daysOfCoverage, setDaysOfCoverage] = useState(30);
@@ -17,6 +26,57 @@ export default function Home() {
   const [planData, setPlanData] = useState<StockPlanRow[]>([]);
   const [isCalculating, setIsCalculating] = useState(false);
   const [validationError, setValidationError] = useState('');
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        setIsLoadingData(true);
+        const [branchesData, productsData, salesData] = await Promise.all([
+          fetchBranches(),
+          fetchProducts(),
+          fetchSales(180) // Fetch last 6 months of sales by default
+        ]);
+
+        setBranches(branchesData);
+        setProducts(productsData);
+        setSales(salesData);
+
+        // Extract unique suppliers from products
+        const uniqueSuppliers: Supplier[] = [];
+        const supplierIds = new Set();
+
+        // We need to fetch supplier names. 
+        // Since the API products endpoint returns supplierId, but not name, 
+        // and we don't have a separate suppliers endpoint yet (it was in mockData),
+        // we will simulate supplier names or use IDs for now if names are missing.
+        // Ideally, we should have a /suppliers endpoint.
+        // For now, let's assume we can extract them or use a placeholder.
+        // Wait, server.js DOES NOT have /suppliers endpoint.
+        // It has /products which returns supplierId.
+        // We might need to add /suppliers to server.js or just list IDs.
+        // Let's use the mockData suppliers for now as a fallback or try to derive them.
+        // Actually, looking at server.js, there is NO suppliers table exposed.
+        // But products have supplier_id.
+
+        // Let's derive suppliers from products.
+        productsData.forEach(p => {
+          if (p.supplierId && !supplierIds.has(p.supplierId)) {
+            supplierIds.add(p.supplierId);
+            uniqueSuppliers.push({ id: p.supplierId, name: p.supplierId, nip: '' });
+          }
+        });
+        setSuppliers(uniqueSuppliers);
+
+      } catch (err) {
+        console.error('Failed to load data:', err);
+        setDataError('Nie udało się pobrać danych z serwera.');
+      } finally {
+        setIsLoadingData(false);
+      }
+    }
+
+    loadData();
+  }, []);
 
   const handleCalculate = () => {
     // Validation
@@ -58,8 +118,20 @@ export default function Home() {
     }
   };
 
-  const selectedSupplierName = suppliers.find(s => s.id === selectedSupplier)?.name || '';
+  const selectedSupplierName = suppliers.find(s => s.id === selectedSupplier)?.name || selectedSupplier;
   const selectedBranches = branches.filter(b => selectedBranchIds.includes(b.id));
+
+  if (isLoadingData) {
+    return <div className="min-h-screen flex items-center justify-center">
+      <div className="text-xl text-gray-600">Ładowanie danych z systemu...</div>
+    </div>;
+  }
+
+  if (dataError) {
+    return <div className="min-h-screen flex items-center justify-center">
+      <div className="text-xl text-red-600">{dataError}</div>
+    </div>;
+  }
 
   return (
     <div className="min-h-screen py-8 px-4">
