@@ -67,11 +67,10 @@ export default function Home() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-3">
-            Planowanie zamówień – wizualizacja dla Subiekt nexo PRO
+            Planowanie zamówień – Subiekt nexo PRO
           </h1>
           <p className="text-gray-600 leading-relaxed">
-            To jest wizualizacja systemu do planowania stanów magazynowych na podstawie historycznej sprzedaży.
-            Dane są przykładowe (mock), ale logika liczenia odpowiada docelowej wersji po podłączeniu do Subiekt nexo PRO.
+            System do planowania stanów magazynowych na podstawie historycznej sprzedaży.
           </p>
         </div>
 
@@ -106,9 +105,7 @@ export default function Home() {
             )}
           </div>
 
-          <div className="mt-4 text-sm text-gray-500 italic">
-            💡 To demo na danych przykładowych. W docelowej wersji dane będą pobierane z Subiekt nexo PRO.
-          </div>
+
         </div>
 
         {/* Results Card */}
