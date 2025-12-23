@@ -6,7 +6,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ res
 
     try {
         const body = await request.json();
-        const items = Array.isArray(body) ? body : [body];
+        // Connector sends { clientId, syncRunId, data: [...] }
+        // We need to extract the array from 'data' property if it exists
+        const items = (body.data && Array.isArray(body.data))
+            ? body.data
+            : (Array.isArray(body) ? body : [body]);
         const count = items.length;
 
         console.log(`[INGEST] Received ${count} items for resource: ${resource}`);
