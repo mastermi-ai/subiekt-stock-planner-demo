@@ -77,8 +77,20 @@ export async function POST(request: Request, { params }: { params: Promise<{ res
                 salesMap.set(key, current);
             }
 
+            // Filter out sales for unknown products (to avoid FK errors)
+            const productIds = Array.from(salesMap.values()).map(a => a.pid);
+            const existingProducts = await prisma.product.findMany({
+                where: { id: { in: productIds } },
+                select: { id: true }
+            });
+            const existingProductIds = new Set(existingProducts.map(p => p.id));
+
+            const validSales = Array.from(salesMap.values()).filter(agg => existingProductIds.has(agg.pid));
+
+            console.log(`[INGEST] Sales batch: ${salesMap.size} total, ${validSales.length} valid (products exist)`);
+
             await prisma.$transaction(
-                Array.from(salesMap.values()).map(agg =>
+                validSales.map(agg =>
                     prisma.sale.upsert({
                         where: {
                             productId_date: {
