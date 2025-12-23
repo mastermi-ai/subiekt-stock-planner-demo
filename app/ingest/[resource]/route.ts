@@ -101,7 +101,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ res
             received: count
         });
     } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         console.error('Ingest error:', error);
-        return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+        return NextResponse.json({ error: 'Ingest failed', details: errorMessage }, { status: 400 });
     }
 }
