@@ -7,7 +7,7 @@ import PlanForm from '@/components/PlanForm';
 import PlanTable from '@/components/PlanTable';
 import ExportButton from '@/components/ExportButton';
 import PdfButton from '@/components/PdfButton';
-import { fetchBranches, fetchProducts, fetchSales } from '@/lib/api';
+import { fetchBranches, fetchProducts, fetchSales, fetchSuppliers } from '@/lib/api';
 import { Branch, Product, Sale, Supplier } from '@/lib/mockData';
 
 export default function Home() {
@@ -31,41 +31,17 @@ export default function Home() {
     async function loadData() {
       try {
         setIsLoadingData(true);
-        const [branchesData, productsData, salesData] = await Promise.all([
+        const [branchesData, productsData, salesData, suppliersData] = await Promise.all([
           fetchBranches(),
           fetchProducts(),
-          fetchSales(180) // Fetch last 6 months of sales by default
+          fetchSales(180), // Fetch last 6 months of sales by default
+          fetchSuppliers()
         ]);
 
         setBranches(branchesData);
         setProducts(productsData);
         setSales(salesData);
-
-        // Extract unique suppliers from products
-        const uniqueSuppliers: Supplier[] = [];
-        const supplierIds = new Set();
-
-        // We need to fetch supplier names. 
-        // Since the API products endpoint returns supplierId, but not name, 
-        // and we don't have a separate suppliers endpoint yet (it was in mockData),
-        // we will simulate supplier names or use IDs for now if names are missing.
-        // Ideally, we should have a /suppliers endpoint.
-        // For now, let's assume we can extract them or use a placeholder.
-        // Wait, server.js DOES NOT have /suppliers endpoint.
-        // It has /products which returns supplierId.
-        // We might need to add /suppliers to server.js or just list IDs.
-        // Let's use the mockData suppliers for now as a fallback or try to derive them.
-        // Actually, looking at server.js, there is NO suppliers table exposed.
-        // But products have supplier_id.
-
-        // Let's derive suppliers from products.
-        productsData.forEach(p => {
-          if (p.supplierId && !supplierIds.has(p.supplierId)) {
-            supplierIds.add(p.supplierId);
-            uniqueSuppliers.push({ id: p.supplierId, name: p.supplierId, nip: '' });
-          }
-        });
-        setSuppliers(uniqueSuppliers);
+        setSuppliers(suppliersData);
 
       } catch (err) {
         console.error('Failed to load data:', err);
