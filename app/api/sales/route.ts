@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { type NextRequest } from 'next/server';
-import type { Sale } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,7 +18,7 @@ export async function GET(request: NextRequest) {
             }
         });
 
-        const mapped = sales.map((s: Sale) => ({
+        const mapped = sales.map((s) => ({
             id: s.id.toString(),
             productId: s.productId.toString(),
             date: s.date.toISOString().split('T')[0],

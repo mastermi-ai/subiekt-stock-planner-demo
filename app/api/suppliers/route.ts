@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import type { Supplier } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,7 +10,7 @@ export async function GET() {
         });
 
         // Convert to frontend format (ID as string)
-        const mapped = suppliers.map((s: Supplier) => ({
+        const mapped = suppliers.map((s) => ({
             ...s,
             id: s.id.toString()
         }));

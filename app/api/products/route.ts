@@ -1,10 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import type { Product, Stock } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
-
-type ProductWithStocks = Product & { stocks: Stock[] };
 
 export async function GET() {
     try {
@@ -12,9 +9,9 @@ export async function GET() {
             include: { stocks: true }
         });
 
-        const mapped = products.map((p: ProductWithStocks) => {
+        const mapped = products.map((p) => {
             const stockByBranch: Record<string, number> = {};
-            p.stocks.forEach((s: Stock) => {
+            p.stocks.forEach((s) => {
                 stockByBranch[s.branchId.toString()] = s.quantity;
             });
 
