@@ -44,18 +44,48 @@ export async function POST(request: Request, { params }: { params: Promise<{ res
                 );
             }
         } else if (resource === 'products') {
+            // Pre-fetch all supplier IDs to validate foreign keys
+            const allSuppliers = await prisma.supplier.findMany({ select: { id: true } });
+            const validSupplierIds = new Set(allSuppliers.map(s => s.id));
+
             const batchSize = 250;
             for (let i = 0; i < items.length; i += batchSize) {
                 const batch = items.slice(i, i + batchSize);
-                await prisma.$transaction(
-                    batch.map((item: any) =>
-                        prisma.product.upsert({
-                            where: { id: item.Id ?? item.id },
-                            update: { sku: item.Sku ?? item.sku, name: item.Name ?? item.name, supplierId: item.SupplierId ?? item.supplierId ?? null },
-                            create: { id: item.Id ?? item.id, sku: item.Sku ?? item.sku, name: item.Name ?? item.name, supplierId: item.SupplierId ?? item.supplierId ?? null },
-                        })
-                    )
-                );
+
+                // Sanitize batch: remove items without ID/Name/SKU, fix invalid SupplierIds
+                const validBatch = batch.filter((item: any) => {
+                    const id = item.Id ?? item.id;
+                    const name = item.Name ?? item.name;
+                    const sku = item.Sku ?? item.sku;
+
+                    if (!id || !name || !sku) {
+                        console.warn(`[INGEST] Skipping invalid product (missing required fields):`, item);
+                        return false;
+                    }
+                    return true;
+                }).map((item: any) => {
+                    const supplierId = item.SupplierId ?? item.supplierId;
+                    // If supplierId provided but not in DB, set to null to avoid FK error
+                    const finalSupplierId = (supplierId && validSupplierIds.has(supplierId)) ? supplierId : null;
+
+                    return {
+                        ...item,
+                        SupplierId: finalSupplierId,
+                        supplierId: finalSupplierId
+                    };
+                });
+
+                if (validBatch.length > 0) {
+                    await prisma.$transaction(
+                        validBatch.map((item: any) =>
+                            prisma.product.upsert({
+                                where: { id: item.Id ?? item.id },
+                                update: { sku: item.Sku ?? item.sku, name: item.Name ?? item.name, supplierId: item.SupplierId ?? item.supplierId ?? null },
+                                create: { id: item.Id ?? item.id, sku: item.Sku ?? item.sku, name: item.Name ?? item.name, supplierId: item.SupplierId ?? item.supplierId ?? null },
+                            })
+                        )
+                    );
+                }
             }
         } else if (resource === 'stocks') {
             const batchSize = 500;
