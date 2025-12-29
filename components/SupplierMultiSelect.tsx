@@ -51,11 +51,15 @@ export default function SupplierMultiSelect({ suppliers, selectedSupplierIds, on
             </label>
 
             <button
-                onClick={() => setIsOpen(!isOpen)}
+                type="button"
+                onClick={(e) => {
+                    e.preventDefault();
+                    setIsOpen(!isOpen);
+                }}
                 className="flex items-center justify-between px-4 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors text-left w-full"
             >
-                <span className={`block truncate ${selectedCount === 0 ? 'text-gray-500' : 'text-gray-900'}`}>
-                    {displayText}
+                <span className={`block truncate ${(selectedCount === 0 || !suppliers.length) ? 'text-gray-500' : 'text-gray-900'}`}>
+                    {suppliers.length > 0 ? displayText : 'Ładowanie...'}
                 </span>
                 <ChevronDown size={16} className={`text-gray-500 transition-transform flex-shrink-0 ml-2 ${isOpen ? 'rotate-180' : ''}`} />
             </button>
@@ -85,17 +89,14 @@ export default function SupplierMultiSelect({ suppliers, selectedSupplierIds, on
                                 return (
                                     <div
                                         key={supplier.id}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            toggleSupplier(supplier.id);
-                                        }}
+                                        onClick={() => toggleSupplier(supplier.id)}
                                         className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 cursor-pointer transition-colors"
                                     >
                                         <div className={`w-5 h-5 border rounded flex-shrink-0 flex items-center justify-center transition-colors ${isSelected ? 'bg-blue-600 border-blue-600' : 'border-gray-300 bg-white'
                                             }`}>
                                             {isSelected && <Check size={14} className="text-white" />}
                                         </div>
-                                        <div className="flex flex-col overflow-hidden pointer-events-none">
+                                        <div className="flex flex-col overflow-hidden">
                                             <span className="text-sm text-gray-700 truncate">{supplier.name}</span>
                                             {supplier.nip && <span className="text-xs text-gray-400 truncate">NIP: {supplier.nip}</span>}
                                         </div>

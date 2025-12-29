@@ -35,7 +35,7 @@ export default function Home() {
         const [branchesData, productsData, salesData, suppliersData] = await Promise.all([
           fetchBranches(),
           fetchProducts(),
-          fetchSales(500),
+          fetchSales(180),
           fetchSuppliers()
         ]);
 

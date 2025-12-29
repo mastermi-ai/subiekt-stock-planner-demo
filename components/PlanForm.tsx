@@ -111,7 +111,11 @@ export default function PlanForm({
                     <div className="flex gap-2">
                         <div className="relative flex-1">
                             <button
-                                onClick={() => setIsDateOpen(!isDateOpen)}
+                                type="button"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    setIsDateOpen(!isDateOpen);
+                                }}
                                 className="w-full flex items-center justify-between px-4 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors text-left"
                             >
                                 <span className="text-gray-900 truncate">
@@ -125,7 +129,9 @@ export default function PlanForm({
                                     {(Object.keys(PRESET_LABELS) as DatePreset[]).map((preset) => (
                                         <button
                                             key={preset}
-                                            onClick={() => {
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.preventDefault();
                                                 onPresetChange(preset);
                                                 setIsDateOpen(false);
                                             }}
@@ -157,7 +163,11 @@ export default function PlanForm({
 
             <div className="pt-2">
                 <button
-                    onClick={onCalculate}
+                    type="button"
+                    onClick={(e) => {
+                        e.preventDefault();
+                        onCalculate();
+                    }}
                     disabled={isCalculating || selectedSupplierIds.length === 0 || selectedBranchIds.length === 0}
                     className="w-full md:w-auto px-12 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md active:scale-[0.98]"
                 >
