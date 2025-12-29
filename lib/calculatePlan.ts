@@ -3,9 +3,10 @@ import { Product, Sale } from './mockData';
 export type StockPlanInput = {
     products: Product[];
     sales: Sale[];
-    supplierId: string;
+    supplierIds: string[]; // Changed from single supplierId
     daysOfCoverage: number; // X
-    analysisPeriodDays: number; // Analysis period in days
+    analysisStartDate: Date; // Start date of analysis
+    analysisEndDate?: Date; // Optional end date (defaults to now)
     branchIds: string[]; // Selected branches
 };
 
@@ -17,18 +18,29 @@ export type StockPlanRow = {
     avgDailySales: number;
     neededForPeriod: number;
     toOrder: number;
+    supplierId: string; // Added for reference
 };
 
 export function calculateStockPlan({
     products,
     sales,
-    supplierId,
+    supplierIds,
     daysOfCoverage,
-    analysisPeriodDays,
+    analysisStartDate,
+    analysisEndDate,
     branchIds
 }: StockPlanInput): StockPlanRow[] {
-    // 1. Filter products by supplier
-    const supplierProducts = products.filter(p => p.supplierId === supplierId);
+    // 1. Filter products by selected suppliers
+    // If supplierIds is empty, we might return empty or specific behavior, but here we assume filtered.
+    const supplierProducts = products.filter(p => p.supplierId && supplierIds.includes(p.supplierId));
+
+    // Calculate actual number of days in the analysis period for averaging
+    const end = analysisEndDate || new Date();
+    // Ensure we count inclusive or exclusive properly. 
+    // Time difference in milliseconds
+    const timeDiff = end.getTime() - analysisStartDate.getTime();
+    // Convert to days, minimum 1 to avoid division by zero
+    const analysisDays = Math.max(1, Math.ceil(timeDiff / (1000 * 3600 * 24)));
 
     // 2. Calculate plan for each product
     return supplierProducts.map(product => {
@@ -38,21 +50,16 @@ export function calculateStockPlan({
         }, 0);
 
         // Filter sales for this product within the analysis period
-        const now = new Date();
-        const cutoffDate = new Date();
-        cutoffDate.setDate(now.getDate() - analysisPeriodDays);
-
         const productSales = sales.filter(s => {
             const saleDate = new Date(s.date);
-            return s.productId === product.id && saleDate >= cutoffDate;
+            return s.productId === product.id && saleDate >= analysisStartDate && saleDate <= end;
         });
 
         // Calculate total quantity sold
         const totalSold = productSales.reduce((sum, s) => sum + s.quantity, 0);
 
         // Calculate average daily sales
-        // Prevent division by zero if analysisPeriodDays is 0 (though it shouldn't be)
-        const avgDailySales = analysisPeriodDays > 0 ? totalSold / analysisPeriodDays : 0;
+        const avgDailySales = totalSold / analysisDays;
 
         // Calculate needed quantity for coverage period
         const neededForPeriod = Math.ceil(avgDailySales * daysOfCoverage);
@@ -67,7 +74,8 @@ export function calculateStockPlan({
             currentStock,
             avgDailySales,
             neededForPeriod,
-            toOrder
+            toOrder,
+            supplierId: product.supplierId || ''
         };
     });
 }
