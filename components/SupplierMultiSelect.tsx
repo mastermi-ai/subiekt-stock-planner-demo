@@ -15,14 +15,14 @@ export default function SupplierMultiSelect({ suppliers, selectedSupplierIds, on
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+            if (isOpen && dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
                 setIsOpen(false);
             }
         };
 
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+    }, [isOpen]);
 
     const toggleSupplier = (supplierId: string) => {
         if (selectedSupplierIds.includes(supplierId)) {
@@ -75,7 +75,6 @@ export default function SupplierMultiSelect({ suppliers, selectedSupplierIds, on
                                 className="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:border-blue-500"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                autoFocus
                             />
                         </div>
                     </div>

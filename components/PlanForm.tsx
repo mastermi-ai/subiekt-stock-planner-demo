@@ -42,6 +42,8 @@ const PRESET_LABELS: Record<DatePreset, string> = {
     custom: 'Ostatnie N dni',
 };
 
+const PRESET_KEYS = Object.keys(PRESET_LABELS) as DatePreset[];
+
 export default function PlanForm({
     suppliers,
     selectedSupplierIds,
@@ -63,13 +65,13 @@ export default function PlanForm({
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (dateRef.current && !dateRef.current.contains(event.target as Node)) {
+            if (isDateOpen && dateRef.current && !dateRef.current.contains(event.target as Node)) {
                 setIsDateOpen(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+    }, [isDateOpen]);
 
     return (
         <div className="flex flex-col gap-6">
@@ -126,12 +128,11 @@ export default function PlanForm({
 
                             {isDateOpen && (
                                 <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl z-50 py-1 max-h-80 overflow-y-auto">
-                                    {(Object.keys(PRESET_LABELS) as DatePreset[]).map((preset) => (
+                                    {PRESET_KEYS.map((preset) => (
                                         <button
                                             key={preset}
                                             type="button"
-                                            onClick={(e) => {
-                                                e.preventDefault();
+                                            onClick={() => {
                                                 onPresetChange(preset);
                                                 setIsDateOpen(false);
                                             }}
