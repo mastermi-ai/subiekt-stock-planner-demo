@@ -16,50 +16,66 @@ export async function POST(request: Request, { params }: { params: Promise<{ res
         console.log(`[INGEST] Received ${count} items for resource: ${resource}`);
 
         if (resource === 'suppliers') {
-            await prisma.$transaction(
-                items.map((item: any) =>
-                    prisma.supplier.upsert({
-                        where: { id: item.Id ?? item.id },
-                        update: { name: item.Name ?? item.name, nip: item.Nip ?? item.nip },
-                        create: { id: item.Id ?? item.id, name: item.Name ?? item.name, nip: item.Nip ?? item.nip },
-                    })
-                )
-            );
+            const batchSize = 500;
+            for (let i = 0; i < items.length; i += batchSize) {
+                const batch = items.slice(i, i + batchSize);
+                await prisma.$transaction(
+                    batch.map((item: any) =>
+                        prisma.supplier.upsert({
+                            where: { id: item.Id ?? item.id },
+                            update: { name: item.Name ?? item.name, nip: item.Nip ?? item.nip },
+                            create: { id: item.Id ?? item.id, name: item.Name ?? item.name, nip: item.Nip ?? item.nip },
+                        })
+                    )
+                );
+            }
         } else if (resource === 'branches') {
-            await prisma.$transaction(
-                items.map((item: any) =>
-                    prisma.branch.upsert({
-                        where: { id: item.Id ?? item.id },
-                        update: { name: item.Name ?? item.name, symbol: item.Symbol ?? item.symbol },
-                        create: { id: item.Id ?? item.id, name: item.Name ?? item.name, symbol: item.Symbol ?? item.symbol },
-                    })
-                )
-            );
+            const batchSize = 500;
+            for (let i = 0; i < items.length; i += batchSize) {
+                const batch = items.slice(i, i + batchSize);
+                await prisma.$transaction(
+                    batch.map((item: any) =>
+                        prisma.branch.upsert({
+                            where: { id: item.Id ?? item.id },
+                            update: { name: item.Name ?? item.name, symbol: item.Symbol ?? item.symbol },
+                            create: { id: item.Id ?? item.id, name: item.Name ?? item.name, symbol: item.Symbol ?? item.symbol },
+                        })
+                    )
+                );
+            }
         } else if (resource === 'products') {
-            await prisma.$transaction(
-                items.map((item: any) =>
-                    prisma.product.upsert({
-                        where: { id: item.Id ?? item.id },
-                        update: { sku: item.Sku ?? item.sku, name: item.Name ?? item.name, supplierId: item.SupplierId ?? item.supplierId ?? null },
-                        create: { id: item.Id ?? item.id, sku: item.Sku ?? item.sku, name: item.Name ?? item.name, supplierId: item.SupplierId ?? item.supplierId ?? null },
-                    })
-                )
-            );
+            const batchSize = 250;
+            for (let i = 0; i < items.length; i += batchSize) {
+                const batch = items.slice(i, i + batchSize);
+                await prisma.$transaction(
+                    batch.map((item: any) =>
+                        prisma.product.upsert({
+                            where: { id: item.Id ?? item.id },
+                            update: { sku: item.Sku ?? item.sku, name: item.Name ?? item.name, supplierId: item.SupplierId ?? item.supplierId ?? null },
+                            create: { id: item.Id ?? item.id, sku: item.Sku ?? item.sku, name: item.Name ?? item.name, supplierId: item.SupplierId ?? item.supplierId ?? null },
+                        })
+                    )
+                );
+            }
         } else if (resource === 'stocks') {
-            await prisma.$transaction(
-                items.map((item: any) => {
-                    const productId = item.ProductId ?? item.productId;
-                    const branchId = item.BranchId ?? item.branchId;
-                    const quantity = item.CurrentStock ?? item.currentStock ?? item.Quantity ?? item.quantity ?? 0;
-                    return prisma.stock.upsert({
-                        where: {
-                            productId_branchId: { productId, branchId }
-                        },
-                        update: { quantity },
-                        create: { productId, branchId, quantity },
-                    });
-                })
-            );
+            const batchSize = 500;
+            for (let i = 0; i < items.length; i += batchSize) {
+                const batch = items.slice(i, i + batchSize);
+                await prisma.$transaction(
+                    batch.map((item: any) => {
+                        const productId = item.ProductId ?? item.productId;
+                        const branchId = item.BranchId ?? item.branchId;
+                        const quantity = item.CurrentStock ?? item.currentStock ?? item.Quantity ?? item.quantity ?? 0;
+                        return prisma.stock.upsert({
+                            where: {
+                                productId_branchId: { productId, branchId }
+                            },
+                            update: { quantity },
+                            create: { productId, branchId, quantity },
+                        });
+                    })
+                );
+            }
         } else if (resource === 'sales') {
             // Aggregate in memory to be safe against duplicate lines in same batch
             const salesMap = new Map<string, { pid: number, date: Date, qty: number }>();
@@ -79,34 +95,48 @@ export async function POST(request: Request, { params }: { params: Promise<{ res
 
             // Filter out sales for unknown products (to avoid FK errors)
             const productIds = Array.from(salesMap.values()).map(a => a.pid);
-            const existingProducts = await prisma.product.findMany({
-                where: { id: { in: productIds } },
-                select: { id: true }
-            });
-            const existingProductIds = new Set(existingProducts.map(p => p.id));
 
-            const validSales = Array.from(salesMap.values()).filter(agg => existingProductIds.has(agg.pid));
+            // Validate products existence in chunks
+            const validProductIds = new Set<number>();
+            const idChunks = [];
+            for (let i = 0; i < productIds.length; i += 2000) {
+                idChunks.push(productIds.slice(i, i + 2000));
+            }
+
+            for (const chunk of idChunks) {
+                const existing = await prisma.product.findMany({
+                    where: { id: { in: chunk } },
+                    select: { id: true }
+                });
+                existing.forEach(p => validProductIds.add(p.id));
+            }
+
+            const validSales = Array.from(salesMap.values()).filter(agg => validProductIds.has(agg.pid));
 
             console.log(`[INGEST] Sales batch: ${salesMap.size} total, ${validSales.length} valid (products exist)`);
 
-            await prisma.$transaction(
-                validSales.map(agg =>
-                    prisma.sale.upsert({
-                        where: {
-                            productId_date: {
+            const batchSize = 500;
+            for (let i = 0; i < validSales.length; i += batchSize) {
+                const batch = validSales.slice(i, i + batchSize);
+                await prisma.$transaction(
+                    batch.map(agg =>
+                        prisma.sale.upsert({
+                            where: {
+                                productId_date: {
+                                    productId: agg.pid,
+                                    date: agg.date
+                                }
+                            },
+                            update: { quantity: agg.qty },
+                            create: {
                                 productId: agg.pid,
-                                date: agg.date
-                            }
-                        },
-                        update: { quantity: agg.qty },
-                        create: {
-                            productId: agg.pid,
-                            date: agg.date,
-                            quantity: agg.qty
-                        },
-                    })
-                )
-            );
+                                date: agg.date,
+                                quantity: agg.qty
+                            },
+                        })
+                    )
+                );
+            }
         }
 
         return NextResponse.json({

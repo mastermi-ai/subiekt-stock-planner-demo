@@ -157,7 +157,7 @@ export default function Home() {
         </div>
 
         {/* Results Card */}
-        {planData.length > 0 && (
+        {planData.length > 0 ? (
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
               <h2 className="text-xl font-semibold text-gray-800">
@@ -182,7 +182,15 @@ export default function Home() {
 
             <PlanTable data={planData} daysOfCoverage={daysOfCoverage} />
           </div>
+        ) : (
+          selectedSupplier && !isCalculating && planData.length === 0 && (
+            <div className="bg-white rounded-lg shadow-md p-12 text-center">
+              <p className="text-gray-500 text-lg">Nie znaleziono produktów przypisanych do tego dostawcy.</p>
+              <p className="text-sm text-gray-400 mt-2">Upewnij się, że dostawca jest poprawnie przypisany do asortymentu w systemie Subiekt nexo.</p>
+            </div>
+          )
         )}
+
       </div>
     </div>
   );
