@@ -20,11 +20,14 @@ async function main() {
             where: { supplierId: { not: null } },
             include: { supplier: true }
         });
-        console.log('Sample linked product:', {
-            id: sample.id,
-            name: sample.name,
-            supplier: sample.supplier ? sample.supplier.name : 'Unknown'
-        });
+
+        if (sample) {
+            console.log('Sample linked product:', {
+                id: sample.id,
+                name: sample.name,
+                supplier: sample.supplier ? sample.supplier.name : 'Unknown'
+            });
+        }
     } else {
         console.log('WARNING: Still no products with suppliers linked.');
     }
