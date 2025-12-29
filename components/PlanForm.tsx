@@ -7,7 +7,8 @@ import { useState, useRef, useEffect } from 'react';
 export type DatePreset =
     | 'currentWeek' | 'currentMonth' | 'currentQuarter' | 'currentYear'
     | 'lastMonth' | 'lastQuarter' | 'lastYear'
-    | 'last7Days' | 'last30Days' | 'last60Days' | 'last90Days';
+    | 'last7Days' | 'last30Days' | 'last60Days' | 'last90Days'
+    | 'custom';
 
 interface PlanFormProps {
     suppliers: Supplier[];
@@ -18,8 +19,10 @@ interface PlanFormProps {
     onSelectedBranchIdsChange: (ids: string[]) => void;
     daysOfCoverage: number;
     activePreset: DatePreset;
+    customAnalysisDays: number;
     onDaysOfCoverageChange: (value: number) => void;
     onPresetChange: (preset: DatePreset) => void;
+    onCustomAnalysisDaysChange: (value: number) => void;
     onCalculate: () => void;
     isCalculating: boolean;
 }
@@ -36,6 +39,7 @@ const PRESET_LABELS: Record<DatePreset, string> = {
     last30Days: 'Ostatnie 30 dni',
     last60Days: 'Ostatnie 60 dni',
     last90Days: 'Ostatnie 90 dni',
+    custom: 'Ostatnie N dni',
 };
 
 export default function PlanForm({
@@ -47,8 +51,10 @@ export default function PlanForm({
     onSelectedBranchIdsChange,
     daysOfCoverage,
     activePreset,
+    customAnalysisDays,
     onDaysOfCoverageChange,
     onPresetChange,
+    onCustomAnalysisDaysChange,
     onCalculate,
     isCalculating,
 }: PlanFormProps) {
@@ -102,33 +108,50 @@ export default function PlanForm({
                     <label className="text-sm font-medium text-gray-700">
                         Okres analizy sprzedaży
                     </label>
-                    <button
-                        onClick={() => setIsDateOpen(!isDateOpen)}
-                        className="flex items-center justify-between px-4 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors text-left"
-                    >
-                        <span className="text-gray-900">
-                            {PRESET_LABELS[activePreset]}
-                        </span>
-                        <ChevronDown size={16} className={`text-gray-500 transition-transform ${isDateOpen ? 'rotate-180' : ''}`} />
-                    </button>
+                    <div className="flex gap-2">
+                        <div className="relative flex-1">
+                            <button
+                                onClick={() => setIsDateOpen(!isDateOpen)}
+                                className="w-full flex items-center justify-between px-4 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors text-left"
+                            >
+                                <span className="text-gray-900 truncate">
+                                    {PRESET_LABELS[activePreset]}
+                                </span>
+                                <ChevronDown size={16} className={`text-gray-500 transition-transform flex-shrink-0 ${isDateOpen ? 'rotate-180' : ''}`} />
+                            </button>
 
-                    {isDateOpen && (
-                        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl z-50 py-1 max-h-80 overflow-y-auto">
-                            {(Object.keys(PRESET_LABELS) as DatePreset[]).map((preset) => (
-                                <button
-                                    key={preset}
-                                    onClick={() => {
-                                        onPresetChange(preset);
-                                        setIsDateOpen(false);
-                                    }}
-                                    className={`w-full text-left px-4 py-2 text-sm hover:bg-blue-50 transition-colors ${activePreset === preset ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'
-                                        }`}
-                                >
-                                    {PRESET_LABELS[preset]}
-                                </button>
-                            ))}
+                            {isDateOpen && (
+                                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl z-50 py-1 max-h-80 overflow-y-auto">
+                                    {(Object.keys(PRESET_LABELS) as DatePreset[]).map((preset) => (
+                                        <button
+                                            key={preset}
+                                            onClick={() => {
+                                                onPresetChange(preset);
+                                                setIsDateOpen(false);
+                                            }}
+                                            className={`w-full text-left px-4 py-2 text-sm hover:bg-blue-50 transition-colors ${activePreset === preset ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'
+                                                }`}
+                                        >
+                                            {PRESET_LABELS[preset]}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
-                    )}
+                        {activePreset === 'custom' && (
+                            <div className="w-24">
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="365"
+                                    value={customAnalysisDays}
+                                    onChange={(e) => onCustomAnalysisDaysChange(Number(e.target.value))}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none animate-in fade-in zoom-in-95 duration-200"
+                                    placeholder="N..."
+                                />
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 

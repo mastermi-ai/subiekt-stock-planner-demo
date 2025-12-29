@@ -22,6 +22,7 @@ export default function Home() {
   const [selectedBranchIds, setSelectedBranchIds] = useState<string[]>([]);
   const [daysOfCoverage, setDaysOfCoverage] = useState(30);
   const [activePreset, setActivePreset] = useState<DatePreset>('last30Days');
+  const [customAnalysisDays, setCustomAnalysisDays] = useState(14);
   const [planData, setPlanData] = useState<StockPlanRow[]>([]);
   const [isCalculating, setIsCalculating] = useState(false);
   const [validationError, setValidationError] = useState('');
@@ -98,6 +99,9 @@ export default function Home() {
       case 'last90Days':
         start.setDate(start.getDate() - 90);
         return { start };
+      case 'custom':
+        start.setDate(start.getDate() - customAnalysisDays);
+        return { start };
       default:
         start.setDate(start.getDate() - 30);
         return { start };
@@ -115,6 +119,10 @@ export default function Home() {
     }
     if (daysOfCoverage < 1) {
       setValidationError('Nieprawidłowa wartość zapasu');
+      return;
+    }
+    if (activePreset === 'custom' && customAnalysisDays < 1) {
+      setValidationError('Okres analizy musi wynosić co najmniej 1 dzień');
       return;
     }
 
@@ -204,8 +212,10 @@ export default function Home() {
             onSelectedBranchIdsChange={setSelectedBranchIds}
             daysOfCoverage={daysOfCoverage}
             activePreset={activePreset}
+            customAnalysisDays={customAnalysisDays}
             onDaysOfCoverageChange={setDaysOfCoverage}
             onPresetChange={setActivePreset}
+            onCustomAnalysisDaysChange={setCustomAnalysisDays}
             onCalculate={handleCalculate}
             isCalculating={isCalculating}
           />
