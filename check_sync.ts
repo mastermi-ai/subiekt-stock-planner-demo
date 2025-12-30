@@ -6,6 +6,17 @@ const prisma = new PrismaClient();
 async function main() {
     console.log('--- VERIFICATION START ---');
 
+    const totalSuppliers = await prisma.supplier.count();
+    console.log(`Current Suppliers in DB: ${totalSuppliers}`);
+
+    const totalBranches = await prisma.branch.count();
+    console.log(`Branches: ${totalBranches}`);
+    const branches = await prisma.branch.findMany({ select: { name: true } });
+    console.log('Branch Names:', branches.map(b => b.name));
+
+    const totalStocks = await prisma.stock.count();
+    console.log(`Stocks: ${totalStocks}`);
+
     const totalProducts = await prisma.product.count();
     console.log(`Total Products: ${totalProducts}`);
 
