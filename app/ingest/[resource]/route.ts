@@ -88,23 +88,48 @@ export async function POST(request: Request, { params }: { params: Promise<{ res
                 }
             }
         } else if (resource === 'stocks') {
+            // Pre-fetch valid IDs to avoid FK errors
+            const allProducts = await prisma.product.findMany({ select: { id: true } });
+            const allBranches = await prisma.branch.findMany({ select: { id: true } });
+
+            const validProductIds = new Set(allProducts.map(p => p.id));
+            const validBranchIds = new Set(allBranches.map(b => b.id));
+
             const batchSize = 500;
             for (let i = 0; i < items.length; i += batchSize) {
                 const batch = items.slice(i, i + batchSize);
-                await prisma.$transaction(
-                    batch.map((item: any) => {
-                        const productId = item.ProductId ?? item.productId;
-                        const branchId = item.BranchId ?? item.branchId;
-                        const quantity = item.CurrentStock ?? item.currentStock ?? item.Quantity ?? item.quantity ?? 0;
-                        return prisma.stock.upsert({
-                            where: {
-                                productId_branchId: { productId, branchId }
-                            },
-                            update: { quantity },
-                            create: { productId, branchId, quantity },
-                        });
-                    })
-                );
+
+                const validBatch = batch.filter((item: any) => {
+                    const productId = item.ProductId ?? item.productId;
+                    const branchId = item.BranchId ?? item.branchId;
+
+                    if (!validProductIds.has(productId)) {
+                        // console.warn(`[INGEST] Skipping stock for unknown product ID: ${productId}`);
+                        return false;
+                    }
+                    if (!validBranchIds.has(branchId)) {
+                        // console.warn(`[INGEST] Skipping stock for unknown branch ID: ${branchId}`);
+                        return false;
+                    }
+                    return true;
+                });
+
+                if (validBatch.length > 0) {
+                    await prisma.$transaction(
+                        validBatch.map((item: any) => {
+                            const productId = item.ProductId ?? item.productId;
+                            const branchId = item.BranchId ?? item.branchId;
+                            const quantity = item.CurrentStock ?? item.currentStock ?? item.Quantity ?? item.quantity ?? 0;
+                            return prisma.stock.upsert({
+                                where: {
+                                    productId_branchId: { productId, branchId }
+                                },
+                                update: { quantity },
+                                create: { productId, branchId, quantity },
+                            });
+                        })
+                    );
+                }
             }
         } else if (resource === 'sales') {
             // Aggregate in memory to be safe against duplicate lines in same batch
