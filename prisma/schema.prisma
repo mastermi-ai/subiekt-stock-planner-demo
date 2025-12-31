@@ -19,6 +19,7 @@ model Branch {
   name      String
   symbol    String
   stocks    Stock[]
+  sales     Sale[]
 }
 
 model Product {
@@ -46,8 +47,10 @@ model Sale {
   id        Int      @id @default(autoincrement())
   productId Int
   product   Product  @relation(fields: [productId], references: [id])
+  branchId  Int
+  branch    Branch   @relation(fields: [branchId], references: [id])
   date      DateTime
   quantity  Float
 
-  @@unique([productId, date])
+  @@unique([productId, branchId, date])
 }

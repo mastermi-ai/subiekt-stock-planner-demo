@@ -132,43 +132,34 @@ export async function POST(request: Request, { params }: { params: Promise<{ res
                 }
             }
         } else if (resource === 'sales') {
-            // Aggregate in memory to be safe against duplicate lines in same batch
-            const salesMap = new Map<string, { pid: number, date: Date, qty: number }>();
+            // Aggregate in memory: key = productId_branchId_date
+            const salesMap = new Map<string, { pid: number, bid: number, date: Date, qty: number }>();
 
             for (const item of items) {
                 const productId = item.ProductId ?? item.productId;
+                const branchId = item.BranchId ?? item.branchId;
                 const quantity = item.Quantity ?? item.quantity ?? 0;
                 const d = new Date(item.Date ?? item.date);
                 d.setUTCHours(0, 0, 0, 0);
                 const dateKey = d.toISOString();
-                const key = `${productId}_${dateKey}`;
+                const key = `${productId}_${branchId}_${dateKey}`;
 
-                const current = salesMap.get(key) || { pid: productId, date: d, qty: 0 };
+                const current = salesMap.get(key) || { pid: productId, bid: branchId, date: d, qty: 0 };
                 current.qty += quantity;
                 salesMap.set(key, current);
             }
 
-            // Filter out sales for unknown products (to avoid FK errors)
-            const productIds = Array.from(salesMap.values()).map(a => a.pid);
+            // Pre-fetch valid product and branch IDs
+            const allProducts = await prisma.product.findMany({ select: { id: true } });
+            const allBranches = await prisma.branch.findMany({ select: { id: true } });
+            const validProductIds = new Set(allProducts.map(p => p.id));
+            const validBranchIds = new Set(allBranches.map(b => b.id));
 
-            // Validate products existence in chunks
-            const validProductIds = new Set<number>();
-            const idChunks = [];
-            for (let i = 0; i < productIds.length; i += 2000) {
-                idChunks.push(productIds.slice(i, i + 2000));
-            }
+            const validSales = Array.from(salesMap.values()).filter(agg =>
+                validProductIds.has(agg.pid) && validBranchIds.has(agg.bid)
+            );
 
-            for (const chunk of idChunks) {
-                const existing = await prisma.product.findMany({
-                    where: { id: { in: chunk } },
-                    select: { id: true }
-                });
-                existing.forEach(p => validProductIds.add(p.id));
-            }
-
-            const validSales = Array.from(salesMap.values()).filter(agg => validProductIds.has(agg.pid));
-
-            console.log(`[INGEST] Sales batch: ${salesMap.size} total, ${validSales.length} valid (products exist)`);
+            console.log(`[INGEST] Sales batch: ${salesMap.size} total, ${validSales.length} valid (products & branches exist)`);
 
             const batchSize = 500;
             for (let i = 0; i < validSales.length; i += batchSize) {
@@ -177,14 +168,16 @@ export async function POST(request: Request, { params }: { params: Promise<{ res
                     batch.map(agg =>
                         prisma.sale.upsert({
                             where: {
-                                productId_date: {
+                                productId_branchId_date: {
                                     productId: agg.pid,
+                                    branchId: agg.bid,
                                     date: agg.date
                                 }
                             },
                             update: { quantity: agg.qty },
                             create: {
                                 productId: agg.pid,
+                                branchId: agg.bid,
                                 date: agg.date,
                                 quantity: agg.qty
                             },

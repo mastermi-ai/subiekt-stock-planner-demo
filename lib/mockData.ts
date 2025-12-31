@@ -20,6 +20,7 @@ export type Product = {
 export type Sale = {
   id: string;
   productId: string;
+  branchId: string;
   date: string; // ISO string, e.g., "2025-09-01"
   quantity: number;
 };
@@ -85,6 +86,7 @@ export const products: Product[] = [
 const generateSales = (): Sale[] => {
   const sales: Sale[] = [];
   const today = new Date();
+  const branchIds = ['br_1', 'br_2', 'br_3', 'br_4'];
 
   products.forEach(product => {
     // Generate sales for last 120 days
@@ -97,9 +99,12 @@ const generateSales = (): Sale[] => {
       if (Math.random() > 0.7) {
         // Random quantity 1-20
         const quantity = Math.floor(Math.random() * 20) + 1;
+        // Random branch
+        const branchId = branchIds[Math.floor(Math.random() * branchIds.length)];
         sales.push({
           id: `sale_${product.id}_${i}`,
           productId: product.id,
+          branchId,
           date: dateStr,
           quantity
         });

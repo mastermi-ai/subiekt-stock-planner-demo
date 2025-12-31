@@ -49,10 +49,13 @@ export function calculateStockPlan({
             return sum + (product.stockByBranch[branchId] || 0);
         }, 0);
 
-        // Filter sales for this product within the analysis period
+        // Filter sales for this product within the analysis period AND selected branches
         const productSales = sales.filter(s => {
             const saleDate = new Date(s.date);
-            return s.productId === product.id && saleDate >= analysisStartDate && saleDate <= end;
+            const matchesProduct = s.productId === product.id;
+            const matchesBranch = branchIds.includes(s.branchId);
+            const matchesDate = saleDate >= analysisStartDate && saleDate <= end;
+            return matchesProduct && matchesBranch && matchesDate;
         });
 
         // Calculate total quantity sold
