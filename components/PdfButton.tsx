@@ -9,7 +9,7 @@ interface PdfButtonProps {
     supplierName: string;
     selectedBranches: Branch[];
     daysOfCoverage: number;
-    analysisPeriodDays: number;
+    analysisPeriodLabel: string;
 }
 
 export default function PdfButton({
@@ -17,7 +17,7 @@ export default function PdfButton({
     supplierName,
     selectedBranches,
     daysOfCoverage,
-    analysisPeriodDays
+    analysisPeriodLabel
 }: PdfButtonProps) {
     const handleGeneratePdf = async () => {
         // Filter for items to order
@@ -59,7 +59,7 @@ export default function PdfButton({
             doc.text(`Oddziały: ${branchNames}`, 14, 36);
 
             doc.text(`Planowany zapas: ${daysOfCoverage} dni`, 14, 42);
-            doc.text(`Okres analizy: ${analysisPeriodDays} dni`, 14, 48);
+            doc.text(`Okres analizy: ${analysisPeriodLabel}`, 14, 48);
 
             // Table
             const tableData = itemsToOrder.map((row, index) => [

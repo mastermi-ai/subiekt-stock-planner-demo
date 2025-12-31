@@ -157,6 +157,24 @@ export default function Home() {
     return `Wyniki dla wybranych dostawców (${selectedSupplierIds.length})`;
   };
 
+  const getAnalysisPeriodLabel = (): string => {
+    const labels: Record<DatePreset, string> = {
+      currentWeek: 'Bieżący tydzień',
+      currentMonth: 'Bieżący miesiąc',
+      currentQuarter: 'Bieżący kwartał',
+      currentYear: 'Bieżący rok',
+      lastMonth: 'Poprzedni miesiąc',
+      lastQuarter: 'Poprzedni kwartał',
+      lastYear: 'Poprzedni rok',
+      last7Days: 'Ostatnie 7 dni',
+      last30Days: 'Ostatnie 30 dni',
+      last60Days: 'Ostatnie 60 dni',
+      last90Days: 'Ostatnie 90 dni',
+      custom: `Ostatnie ${customAnalysisDays} dni`
+    };
+    return labels[activePreset] || 'Ostatnie 30 dni';
+  };
+
   const selectedBranches = branches.filter(b => selectedBranchIds.includes(b.id));
 
   if (isLoadingData) {
@@ -235,7 +253,7 @@ export default function Home() {
                   {getResultsTitle()}
                 </h2>
                 <p className="text-sm text-gray-500">
-                  Wygenerowane na podstawie danych z okresu: <span className="font-medium text-gray-700">{activePreset}</span>
+                  Wygenerowane na podstawie danych z okresu: <span className="font-medium text-gray-700">{getAnalysisPeriodLabel()}</span>
                 </p>
               </div>
               <div className="flex items-center gap-3 w-full lg:w-auto">
@@ -243,14 +261,14 @@ export default function Home() {
                   data={planData}
                   supplierName={selectedSupplierIds.length === 1 ? suppliers.find(s => s.id === selectedSupplierIds[0])?.name || 'Dostawca' : 'Zbiorcze'}
                   daysOfCoverage={daysOfCoverage}
-                  analysisPeriodDays={90} // placeholder for metadata
+                  analysisPeriodLabel={getAnalysisPeriodLabel()}
                 />
                 <PdfButton
                   data={planData}
                   supplierName={selectedSupplierIds.length === 1 ? suppliers.find(s => s.id === selectedSupplierIds[0])?.name || 'Dostawca' : 'Zbiorcze'}
                   selectedBranches={selectedBranches}
                   daysOfCoverage={daysOfCoverage}
-                  analysisPeriodDays={90} // placeholder for metadata
+                  analysisPeriodLabel={getAnalysisPeriodLabel()}
                 />
               </div>
             </div>

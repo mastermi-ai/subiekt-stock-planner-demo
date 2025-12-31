@@ -81,6 +81,29 @@ export default function SupplierMultiSelect({ suppliers, selectedSupplierIds, on
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
+                        <div className="flex gap-2 mt-2">
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onChange(filteredSuppliers.map(s => s.id));
+                                }}
+                                className="text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                            >
+                                Zaznacz wszystko
+                            </button>
+                            <span className="text-gray-300">|</span>
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onChange([]);
+                                }}
+                                className="text-xs text-red-600 hover:text-red-800 hover:underline"
+                            >
+                                Odznacz wszystko
+                            </button>
+                        </div>
                     </div>
 
                     <div className="overflow-y-auto flex-1">

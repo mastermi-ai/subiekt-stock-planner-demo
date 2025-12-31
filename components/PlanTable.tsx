@@ -12,6 +12,7 @@ type SortOption = 'order_desc' | 'name_asc' | 'name_desc' | 'sku_asc' | 'sku_des
 export default function PlanTable({ data, daysOfCoverage }: PlanTableProps) {
     const [searchTerm, setSearchTerm] = useState('');
     const [sortBy, setSortBy] = useState<SortOption>('order_desc');
+    const [showOnlyToOrder, setShowOnlyToOrder] = useState(false);
 
     // Filter and sort data
     const processedData = useMemo(() => {
@@ -25,6 +26,11 @@ export default function PlanTable({ data, daysOfCoverage }: PlanTableProps) {
                     row.name.toLowerCase().includes(lowerTerm) ||
                     row.sku.toLowerCase().includes(lowerTerm)
             );
+        }
+
+        // Filter only to order
+        if (showOnlyToOrder) {
+            result = result.filter(row => row.toOrder > 0);
         }
 
         // Sort
@@ -46,7 +52,7 @@ export default function PlanTable({ data, daysOfCoverage }: PlanTableProps) {
         });
 
         return result;
-    }, [data, searchTerm, sortBy]);
+    }, [data, searchTerm, sortBy, showOnlyToOrder]);
 
     if (data.length === 0) {
         return (
@@ -88,6 +94,17 @@ export default function PlanTable({ data, daysOfCoverage }: PlanTableProps) {
                             <option value="sku_desc">SKU (Z-A)</option>
                         </select>
                     </div>
+
+                    {/* Only To Order Toggle */}
+                    <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={showOnlyToOrder}
+                            onChange={(e) => setShowOnlyToOrder(e.target.checked)}
+                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        />
+                        <span className="text-sm text-gray-700 whitespace-nowrap">Tylko do zamówienia</span>
+                    </label>
                 </div>
             </div>
 

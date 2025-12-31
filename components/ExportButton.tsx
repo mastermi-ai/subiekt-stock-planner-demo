@@ -6,10 +6,10 @@ interface ExportButtonProps {
     data: StockPlanRow[];
     supplierName: string;
     daysOfCoverage: number;
-    analysisPeriodDays: number;
+    analysisPeriodLabel: string;
 }
 
-export default function ExportButton({ data, supplierName, daysOfCoverage, analysisPeriodDays }: ExportButtonProps) {
+export default function ExportButton({ data, supplierName, daysOfCoverage, analysisPeriodLabel }: ExportButtonProps) {
     const handleExportCSV = () => {
         if (data.length === 0) return;
 
