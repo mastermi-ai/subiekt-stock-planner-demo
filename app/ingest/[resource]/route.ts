@@ -12,6 +12,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ res
             ? body.data
             : (Array.isArray(body) ? body : [body]);
         const count = items.length;
+        let validCount = 0;
 
         console.log(`[INGEST] Received ${count} items for resource: ${resource}`);
 
@@ -152,14 +153,24 @@ export async function POST(request: Request, { params }: { params: Promise<{ res
             // Pre-fetch valid product and branch IDs
             const allProducts = await prisma.product.findMany({ select: { id: true } });
             const allBranches = await prisma.branch.findMany({ select: { id: true } });
-            const validProductIds = new Set(allProducts.map(p => p.id));
-            const validBranchIds = new Set(allBranches.map(b => b.id));
 
-            const validSales = Array.from(salesMap.values()).filter(agg =>
-                validProductIds.has(agg.pid) && validBranchIds.has(agg.bid)
-            );
+            // Normalize to numbers to be absolutely sure
+            const validProductIds = new Set(allProducts.map(p => Number(p.id)));
+            const validBranchIds = new Set(allBranches.map(b => Number(b.id)));
+
+            const validSales = Array.from(salesMap.values()).filter(agg => {
+                const pid = Number(agg.pid);
+                const bid = Number(agg.bid);
+                const isValid = validProductIds.has(pid) && validBranchIds.has(bid);
+
+                if (!isValid) {
+                    // console.log(`[INGEST] Dropping sale: PID=${pid} BID=${bid} (ValidProd=${validProductIds.has(pid)}, ValidBranch=${validBranchIds.has(bid)})`);
+                }
+                return isValid;
+            });
 
             console.log(`[INGEST] Sales batch: ${salesMap.size} total, ${validSales.length} valid (products & branches exist)`);
+            validCount = validSales.length;
 
             const batchSize = 500;
             for (let i = 0; i < validSales.length; i += batchSize) {
@@ -190,7 +201,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ res
         return NextResponse.json({
             success: true,
             resource,
-            received: count
+            received: count,
+            validCount: validCount,
+            message: `Processed ${count} items, ${validCount} valid.`
         });
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';

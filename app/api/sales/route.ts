@@ -13,9 +13,11 @@ export async function GET(request: NextRequest) {
         fromDate.setDate(fromDate.getDate() - days);
 
         const sales = await prisma.sale.findMany({
-            where: {
-                date: { gte: fromDate }
-            }
+            // where: {
+            //     date: { gte: fromDate }
+            // }
+            orderBy: { date: 'desc' },
+            take: 100 // Safety limit
         });
 
         const mapped = sales.map((s) => ({
@@ -29,5 +31,14 @@ export async function GET(request: NextRequest) {
     } catch (error) {
         console.error('Failed to fetch sales:', error);
         return NextResponse.json({ error: 'Failed' }, { status: 500 });
+    }
+}
+
+export async function DELETE() {
+    try {
+        await prisma.sale.deleteMany({});
+        return NextResponse.json({ success: true, message: 'All sales deleted' });
+    } catch (error) {
+        return NextResponse.json({ error: 'Failed to delete sales' }, { status: 500 });
     }
 }
