@@ -13,16 +13,16 @@ export async function GET(request: NextRequest) {
         fromDate.setDate(fromDate.getDate() - days);
 
         const sales = await prisma.sale.findMany({
-            // where: {
-            //     date: { gte: fromDate }
-            // }
-            orderBy: { date: 'desc' },
-            take: 100 // Safety limit
+            where: {
+                date: { gte: fromDate }
+            },
+            orderBy: { date: 'desc' }
         });
 
         const mapped = sales.map((s) => ({
             id: s.id.toString(),
             productId: s.productId.toString(),
+            branchId: s.branchId.toString(),
             date: s.date.toISOString().split('T')[0],
             quantity: s.quantity
         }));
