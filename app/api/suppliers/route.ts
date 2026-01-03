@@ -6,11 +6,6 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
     try {
         const suppliers = await prisma.supplier.findMany({
-            where: {
-                products: {
-                    some: {}
-                }
-            },
             orderBy: { name: 'asc' }
         });
 
