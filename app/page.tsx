@@ -44,6 +44,11 @@ export default function Home() {
         setSales(salesData);
         setSuppliers(suppliersData);
 
+        // Auto-select all branches on first load
+        if (branchesData.length > 0) {
+          setSelectedBranchIds(branchesData.map(b => b.id));
+        }
+
       } catch (err) {
         console.error('Failed to load data:', err);
         setDataError('Nie udało się pobrać danych z serwera.');
