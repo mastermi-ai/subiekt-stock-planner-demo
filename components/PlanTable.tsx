@@ -108,6 +108,16 @@ export default function PlanTable({ data, daysOfCoverage }: PlanTableProps) {
                 </div>
             </div>
 
+            {/* Summary Bar */}
+            <div className="flex gap-6 p-4 bg-blue-50 border border-blue-100 rounded-lg text-sm text-blue-900">
+                <div>
+                    Do zamówienia: <span className="font-bold">{processedData.filter(r => r.toOrder > 0).length}</span> pozycji
+                </div>
+                <div>
+                    Łączna ilość sztuk: <span className="font-bold">{processedData.reduce((sum, r) => sum + r.toOrder, 0)}</span> szt.
+                </div>
+            </div>
+
             {/* Table */}
             <div className="overflow-x-auto border border-gray-200 rounded-lg">
                 <table className="w-full border-collapse">
@@ -126,22 +136,36 @@ export default function PlanTable({ data, daysOfCoverage }: PlanTableProps) {
                     </thead>
                     <tbody>
                         {processedData.length > 0 ? (
-                            processedData.map((row, index) => (
-                                <tr
-                                    key={row.productId}
-                                    className={`border-b border-gray-200 last:border-0 ${row.toOrder > 0 ? 'bg-yellow-50' : 'bg-white'} hover:bg-gray-50 transition-colors`}
-                                >
-                                    <td className="px-4 py-3 text-sm text-gray-700">{index + 1}</td>
-                                    <td className="px-4 py-3 text-sm font-mono text-gray-700">{row.sku}</td>
-                                    <td className="px-4 py-3 text-sm text-gray-700">{row.name}</td>
-                                    <td className="px-4 py-3 text-sm text-right text-gray-700">{row.currentStock}</td>
-                                    <td className="px-4 py-3 text-sm text-right text-gray-700">{row.avgDailySales.toFixed(2)}</td>
-                                    <td className="px-4 py-3 text-sm text-right text-gray-700">{row.neededForPeriod}</td>
-                                    <td className="px-4 py-3 text-sm text-right font-semibold text-gray-900">
-                                        {row.toOrder > 0 ? row.toOrder : '-'}
-                                    </td>
-                                </tr>
-                            ))
+                            processedData.map((row, index) => {
+                                // Determine row color
+                                let rowClass = 'bg-white';
+                                if (row.currentStock === 0 && row.toOrder > 0) {
+                                    rowClass = 'bg-red-50 hover:bg-red-100'; // CRITICAL: Out of stock
+                                } else if (row.toOrder > 0) {
+                                    rowClass = 'bg-yellow-50 hover:bg-yellow-100'; // WARNING: Low stock
+                                } else {
+                                    rowClass = 'hover:bg-gray-50'; // OK
+                                }
+
+                                return (
+                                    <tr
+                                        key={row.productId}
+                                        className={`border-b border-gray-200 last:border-0 transition-colors ${rowClass}`}
+                                    >
+                                        <td className="px-4 py-3 text-sm text-gray-700">{index + 1}</td>
+                                        <td className="px-4 py-3 text-sm font-mono text-gray-700">{row.sku}</td>
+                                        <td className="px-4 py-3 text-sm text-gray-700">{row.name}</td>
+                                        <td className={`px-4 py-3 text-sm text-right ${row.currentStock === 0 ? 'text-red-600 font-bold' : 'text-gray-700'}`}>
+                                            {row.currentStock}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm text-right text-gray-700">{row.avgDailySales.toFixed(2)}</td>
+                                        <td className="px-4 py-3 text-sm text-right text-gray-700">{row.neededForPeriod}</td>
+                                        <td className={`px-4 py-3 text-sm text-right font-semibold ${row.toOrder > 0 ? 'text-blue-600' : 'text-gray-900'}`}>
+                                            {row.toOrder > 0 ? row.toOrder : '-'}
+                                        </td>
+                                    </tr>
+                                );
+                            })
                         ) : (
                             <tr>
                                 <td colSpan={7} className="px-4 py-8 text-center text-gray-500">

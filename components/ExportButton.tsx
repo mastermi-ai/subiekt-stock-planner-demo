@@ -38,7 +38,8 @@ export default function ExportButton({ data, supplierName, daysOfCoverage, analy
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `plan_zamowien_${supplierName.replace(/\s+/g, '_')}_${daysOfCoverage}_dni.csv`;
+        const today = new Date().toISOString().split('T')[0];
+        link.download = `Zamowienie_${supplierName.replace(/\s+/g, '_')}_${today}.csv`;
 
         // Trigger download
         document.body.appendChild(link);
