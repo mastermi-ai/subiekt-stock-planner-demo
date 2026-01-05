@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { calculateStockPlan, StockPlanRow } from '@/lib/calculatePlan';
 import PlanForm, { DatePreset } from '@/components/PlanForm';
 import PlanTable from '@/components/PlanTable';
@@ -35,7 +35,7 @@ export default function Home() {
         const [branchesData, productsData, salesData, suppliersData] = await Promise.all([
           fetchBranches(),
           fetchProducts(),
-          fetchSales(180),
+          fetchSales(450),  // CRITICAL: Must be >= 365 days to support "Previous Year" analysis
           fetchSuppliers()
         ]);
 
@@ -59,6 +59,36 @@ export default function Home() {
 
     loadData();
   }, []);
+
+  const productSupplierMap = useMemo(() => {
+    const map = new Map<string, string>();
+    products.forEach(p => map.set(p.id, p.supplierId));
+    return map;
+  }, [products]);
+
+  const availableSuppliers = useMemo(() => {
+    if (selectedBranchIds.length === 0) return suppliers;
+
+    const activeSupplierIds = new Set<string>();
+
+    // 1. Check products with stock in selected branches
+    products.forEach(p => {
+      const hasStock = selectedBranchIds.some(bid => (p.stockByBranch[bid] || 0) > 0);
+      if (hasStock) {
+        activeSupplierIds.add(p.supplierId);
+      }
+    });
+
+    // 2. Check sales in selected branches
+    sales.forEach(s => {
+      if (selectedBranchIds.includes(s.branchId)) {
+        const sid = productSupplierMap.get(s.productId);
+        if (sid) activeSupplierIds.add(sid);
+      }
+    });
+
+    return suppliers.filter(s => activeSupplierIds.has(s.id));
+  }, [suppliers, products, sales, selectedBranchIds, productSupplierMap]);
 
   const getDateRange = (preset: DatePreset): { start: Date; end?: Date } => {
     const now = new Date();
@@ -213,7 +243,7 @@ export default function Home() {
       <div className="max-w-6xl mx-auto">
         <div className="mb-10 text-center md:text-left transition-all">
           <h1 className="text-4xl font-extrabold text-gray-900 mb-4 tracking-tight">
-            Planowanie zamówień – Subiekt nexo PRO
+            {process.env.NEXT_PUBLIC_APP_TITLE || 'Planowanie zamówień – Subiekt nexo PRO'}
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl">
             Zautomatyzowany system analizy stanów magazynowych i historycznej sprzedaży dla Twojego biznesu.
@@ -227,7 +257,7 @@ export default function Home() {
           </div>
 
           <PlanForm
-            suppliers={suppliers}
+            suppliers={availableSuppliers}
             selectedSupplierIds={selectedSupplierIds}
             onSelectedSupplierIdsChange={setSelectedSupplierIds}
             branches={branches}

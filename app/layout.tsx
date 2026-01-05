@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Planowanie zamówień - Subiekt nexo PRO",
+  title: process.env.NEXT_PUBLIC_APP_TITLE || "Planowanie zamówień - Subiekt nexo PRO",
   description: "System planowania stanów magazynowych na podstawie historycznej sprzedaży dla Subiekt nexo PRO",
   colorScheme: "light",
 };
