@@ -143,7 +143,13 @@ export default function Home() {
     }
   };
 
+
   const handleCalculate = () => {
+    // Debounce protection - prevent multiple rapid clicks
+    if (isCalculating) {
+      return;
+    }
+
     if (selectedSupplierIds.length === 0) {
       setValidationError('Proszę wybrać co najmniej jednego dostawcę');
       return;
@@ -164,25 +170,28 @@ export default function Home() {
     setValidationError('');
     setIsCalculating(true);
 
-    try {
-      const { start, end } = getDateRange(activePreset);
-      const calculatedPlan = calculateStockPlan({
-        products,
-        sales,
-        supplierIds: selectedSupplierIds,
-        daysOfCoverage,
-        analysisStartDate: start,
-        analysisEndDate: end,
-        branchIds: selectedBranchIds
-      });
+    // Wrap in setTimeout to allow UI to update (show spinner) before heavy computation
+    setTimeout(() => {
+      try {
+        const { start, end } = getDateRange(activePreset);
+        const calculatedPlan = calculateStockPlan({
+          products,
+          sales,
+          supplierIds: selectedSupplierIds,
+          daysOfCoverage,
+          analysisStartDate: start,
+          analysisEndDate: end,
+          branchIds: selectedBranchIds
+        });
 
-      setPlanData(calculatedPlan);
-    } catch (error) {
-      console.error('Error calculating plan:', error);
-      setValidationError('Wystąpił błąd podczas obliczania planu.');
-    } finally {
-      setIsCalculating(false);
-    }
+        setPlanData(calculatedPlan);
+      } catch (error) {
+        console.error('Error calculating plan:', error);
+        setValidationError('Wystąpił błąd podczas obliczania planu.');
+      } finally {
+        setIsCalculating(false);
+      }
+    }, 100); // Small delay to let browser render loading state
   };
 
   const getResultsTitle = () => {

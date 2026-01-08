@@ -42,6 +42,24 @@ export function calculateStockPlan({
     // Convert to days, minimum 1 to avoid division by zero
     const analysisDays = Math.max(1, Math.ceil(timeDiff / (1000 * 3600 * 24)));
 
+    // Create a Set of product IDs for selected suppliers (for O(1) lookup)
+    const supplierProductIds = new Set(supplierProducts.map(p => p.id));
+
+    // 2. Pre-filter and group sales by productId
+    // OPTIMIZATION: Only process sales for products from selected suppliers
+    const salesByProduct = new Map<string, Sale[]>();
+    sales.forEach(s => {
+        // Skip sales not from selected branches
+        if (!branchIds.includes(s.branchId)) return;
+
+        // Skip sales for products not from selected suppliers (major optimization)
+        if (!supplierProductIds.has(s.productId)) return;
+
+        const existing = salesByProduct.get(s.productId) || [];
+        existing.push(s);
+        salesByProduct.set(s.productId, existing);
+    });
+
     // 2. Calculate plan for each product
     return supplierProducts.map(product => {
         // Calculate current stock (sum of selected branches)
@@ -49,17 +67,17 @@ export function calculateStockPlan({
             return sum + (product.stockByBranch[branchId] || 0);
         }, 0);
 
-        // Filter sales for this product within the analysis period AND selected branches
-        const productSales = sales.filter(s => {
-            const saleDate = new Date(s.date);
-            const matchesProduct = s.productId === product.id;
-            const matchesBranch = branchIds.includes(s.branchId);
-            const matchesDate = saleDate >= analysisStartDate && saleDate <= end;
-            return matchesProduct && matchesBranch && matchesDate;
-        });
+        // Get pre-filtered sales for this product
+        const productAllSales = salesByProduct.get(product.id) || [];
 
-        // Calculate total quantity sold
-        const totalSold = productSales.reduce((sum, s) => sum + s.quantity, 0);
+        // Filter by date (Branch filtering is already done during grouping)
+        const totalSold = productAllSales.reduce((sum, s) => {
+            const saleDate = new Date(s.date);
+            if (saleDate >= analysisStartDate && saleDate <= end) {
+                return sum + s.quantity;
+            }
+            return sum;
+        }, 0);
 
         // Calculate average daily sales
         const avgDailySales = totalSold / analysisDays;
