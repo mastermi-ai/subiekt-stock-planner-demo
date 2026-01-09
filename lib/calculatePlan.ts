@@ -62,10 +62,20 @@ export function calculateStockPlan({
 
     // 2. Calculate plan for each product
     return supplierProducts.map(product => {
-        // Calculate current stock (sum of selected branches)
-        const currentStock = branchIds.reduce((sum, branchId) => {
-            return sum + (product.stockByBranch[branchId] || 0);
-        }, 0);
+        // Calculate current stock and reserved (sum of selected branches)
+        let totalStock = 0;
+        let totalReserved = 0;
+
+        branchIds.forEach(branchId => {
+            const stock = product.stockByBranch[branchId];
+            if (stock) {
+                totalStock += stock.quantity;
+                totalReserved += stock.reserved;
+            }
+        });
+
+        // Available stock = total - reserved
+        const currentStock = Math.max(0, totalStock - totalReserved);
 
         // Get pre-filtered sales for this product
         const productAllSales = salesByProduct.get(product.id) || [];

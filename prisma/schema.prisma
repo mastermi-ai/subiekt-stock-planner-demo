@@ -39,6 +39,7 @@ model Stock {
   branchId  Int
   branch    Branch   @relation(fields: [branchId], references: [id])
   quantity  Float
+  reserved  Float    @default(0)
 
   @@unique([productId, branchId])
 }

@@ -10,9 +10,12 @@ export async function GET() {
         });
 
         const mapped = products.map((p) => {
-            const stockByBranch: Record<string, number> = {};
+            const stockByBranch: Record<string, { quantity: number; reserved: number }> = {};
             p.stocks.forEach((s) => {
-                stockByBranch[s.branchId.toString()] = s.quantity;
+                stockByBranch[s.branchId.toString()] = {
+                    quantity: s.quantity,
+                    reserved: s.reserved
+                };
             });
 
             return {

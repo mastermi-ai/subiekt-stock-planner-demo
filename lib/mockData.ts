@@ -14,7 +14,7 @@ export type Product = {
   sku: string;
   name: string;
   supplierId: string;
-  stockByBranch: Record<string, number>; // key = branchId, value = stock
+  stockByBranch: Record<string, { quantity: number; reserved: number }>; // updated structure
 };
 
 export type Sale = {
@@ -57,28 +57,58 @@ export const products: Product[] = [
   // Supplier A
   {
     id: 'p_1', sku: 'ELE-001', name: 'Słuchawki bezprzewodowe Pro', supplierId: 'sup_1',
-    stockByBranch: { 'br_1': 5, 'br_2': 3, 'br_3': 2, 'br_4': 5 }
+    stockByBranch: {
+      'br_1': { quantity: 5, reserved: 0 },
+      'br_2': { quantity: 3, reserved: 0 },
+      'br_3': { quantity: 2, reserved: 0 },
+      'br_4': { quantity: 5, reserved: 1 }
+    }
   },
   {
     id: 'p_2', sku: 'ELE-002', name: 'Powerbank 20000mAh', supplierId: 'sup_1',
-    stockByBranch: { 'br_1': 2, 'br_2': 1, 'br_3': 0, 'br_4': 5 }
+    stockByBranch: {
+      'br_1': { quantity: 2, reserved: 0 },
+      'br_2': { quantity: 1, reserved: 0 },
+      'br_3': { quantity: 0, reserved: 0 },
+      'br_4': { quantity: 5, reserved: 2 }
+    }
   },
   {
     id: 'p_3', sku: 'ELE-003', name: 'Kabel USB-C 1m', supplierId: 'sup_1',
-    stockByBranch: { 'br_1': 10, 'br_2': 5, 'br_3': 5, 'br_4': 20 }
+    stockByBranch: {
+      'br_1': { quantity: 10, reserved: 1 },
+      'br_2': { quantity: 5, reserved: 0 },
+      'br_3': { quantity: 5, reserved: 1 },
+      'br_4': { quantity: 20, reserved: 3 }
+    }
   },
   {
     id: 'p_4', sku: 'ELE-004', name: 'Ładowarka sieciowa 65W', supplierId: 'sup_1',
-    stockByBranch: { 'br_1': 0, 'br_2': 0, 'br_3': 1, 'br_4': 2 }
+    stockByBranch: {
+      'br_1': { quantity: 0, reserved: 0 },
+      'br_2': { quantity: 0, reserved: 0 },
+      'br_3': { quantity: 1, reserved: 0 },
+      'br_4': { quantity: 2, reserved: 0 }
+    }
   },
   // Supplier B
   {
     id: 'p_5', sku: 'ACC-001', name: 'Etui na telefon X', supplierId: 'sup_2',
-    stockByBranch: { 'br_1': 5, 'br_2': 5, 'br_3': 5, 'br_4': 10 }
+    stockByBranch: {
+      'br_1': { quantity: 5, reserved: 1 },
+      'br_2': { quantity: 5, reserved: 0 },
+      'br_3': { quantity: 5, reserved: 2 },
+      'br_4': { quantity: 10, reserved: 0 }
+    }
   },
   {
     id: 'p_6', sku: 'ACC-002', name: 'Szkło hartowane Y', supplierId: 'sup_2',
-    stockByBranch: { 'br_1': 20, 'br_2': 15, 'br_3': 10, 'br_4': 50 }
+    stockByBranch: {
+      'br_1': { quantity: 20, reserved: 5 },
+      'br_2': { quantity: 15, reserved: 3 },
+      'br_3': { quantity: 10, reserved: 2 },
+      'br_4': { quantity: 50, reserved: 10 }
+    }
   },
 ];
 
