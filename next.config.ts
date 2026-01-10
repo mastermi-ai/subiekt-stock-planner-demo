@@ -8,6 +8,14 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  async rewrites() {
+    return [
+      {
+        source: '/ingest/:path*',
+        destination: '/api/ingest/:path*',
+      },
+    ];
+  },
 };
 
 export default nextConfig;
