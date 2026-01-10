@@ -5,10 +5,10 @@ import { validateAuth, validatePayload } from '@/lib/ingest-helpers';
 export const dynamic = 'force-dynamic';
 
 interface StockData {
-    ProductId: number;
-    BranchId: number;
-    CurrentStock: number;
-    ReservedStock: number;
+    productId: number;
+    branchId: number;
+    currentStock: number;
+    reservedStock: number;
 }
 
 export async function POST(request: NextRequest) {
@@ -37,10 +37,10 @@ export async function POST(request: NextRequest) {
             const batch = data.slice(i, i + batchSize);
             await prisma.stock.createMany({
                 data: batch.map((stock) => ({
-                    productId: stock.ProductId,
-                    branchId: stock.BranchId,
-                    quantity: stock.CurrentStock,
-                    reserved: stock.ReservedStock,
+                    productId: stock.productId,
+                    branchId: stock.branchId,
+                    quantity: stock.currentStock,
+                    reserved: stock.reservedStock,
                 })),
                 skipDuplicates: true,
             });

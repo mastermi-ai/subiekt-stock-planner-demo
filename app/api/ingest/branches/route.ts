@@ -5,9 +5,9 @@ import { validateAuth, validatePayload } from '@/lib/ingest-helpers';
 export const dynamic = 'force-dynamic';
 
 interface BranchData {
-    Id: number;
-    Name: string;
-    Symbol: string;
+    id: number;
+    name: string;
+    symbol: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -24,20 +24,20 @@ export async function POST(request: NextRequest) {
         for (const branch of data) {
             try {
                 await prisma.branch.upsert({
-                    where: { id: branch.Id },
+                    where: { id: branch.id },
                     create: {
-                        id: branch.Id,
-                        name: branch.Name,
-                        symbol: branch.Symbol,
+                        id: branch.id,
+                        name: branch.name,
+                        symbol: branch.symbol,
                     },
                     update: {
-                        name: branch.Name,
-                        symbol: branch.Symbol,
+                        name: branch.name,
+                        symbol: branch.symbol,
                     },
                 });
                 successCount++;
             } catch (err) {
-                console.error(`[${syncRunId}] Failed to upsert branch ${branch.Id}:`, err);
+                console.error(`[${syncRunId}] Failed to upsert branch ${branch.id}:`, err);
             }
         }
 

@@ -5,10 +5,10 @@ import { validateAuth, validatePayload } from '@/lib/ingest-helpers';
 export const dynamic = 'force-dynamic';
 
 interface ProductData {
-    Id: number;
-    Sku: string;
-    Name: string;
-    SupplierId?: number;
+    id: number;
+    sku: string;
+    name: string;
+    supplierId?: number;
 }
 
 export async function POST(request: NextRequest) {
@@ -25,22 +25,22 @@ export async function POST(request: NextRequest) {
         for (const product of data) {
             try {
                 await prisma.product.upsert({
-                    where: { id: product.Id },
+                    where: { id: product.id },
                     create: {
-                        id: product.Id,
-                        sku: product.Sku,
-                        name: product.Name,
-                        supplierId: product.SupplierId || null,
+                        id: product.id,
+                        sku: product.sku,
+                        name: product.name,
+                        supplierId: product.supplierId || null,
                     },
                     update: {
-                        sku: product.Sku,
-                        name: product.Name,
-                        supplierId: product.SupplierId || null,
+                        sku: product.sku,
+                        name: product.name,
+                        supplierId: product.supplierId || null,
                     },
                 });
                 successCount++;
             } catch (err) {
-                console.error(`[${syncRunId}] Failed to upsert product ${product.Id}:`, err);
+                console.error(`[${syncRunId}] Failed to upsert product ${product.id}:`, err);
             }
         }
 

@@ -5,10 +5,10 @@ import { validateAuth, validatePayload } from '@/lib/ingest-helpers';
 export const dynamic = 'force-dynamic';
 
 interface SaleData {
-    ProductId: number;
-    Date: string; // ISO date string
-    Quantity: number;
-    BranchId: number;
+    productId: number;
+    date: string; // ISO date string
+    quantity: number;
+    branchId: number;
 }
 
 export async function POST(request: NextRequest) {
@@ -24,24 +24,24 @@ export async function POST(request: NextRequest) {
         let successCount = 0;
         for (const sale of data) {
             try {
-                const saleDate = new Date(sale.Date);
+                const saleDate = new Date(sale.date);
 
                 await prisma.sale.upsert({
                     where: {
                         productId_branchId_date: {
-                            productId: sale.ProductId,
-                            branchId: sale.BranchId,
+                            productId: sale.productId,
+                            branchId: sale.branchId,
                             date: saleDate,
                         },
                     },
                     create: {
-                        productId: sale.ProductId,
-                        branchId: sale.BranchId,
+                        productId: sale.productId,
+                        branchId: sale.branchId,
                         date: saleDate,
-                        quantity: sale.Quantity,
+                        quantity: sale.quantity,
                     },
                     update: {
-                        quantity: { increment: sale.Quantity },
+                        quantity: { increment: sale.quantity },
                     },
                 });
                 successCount++;

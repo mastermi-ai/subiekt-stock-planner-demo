@@ -5,9 +5,9 @@ import { validateAuth, validatePayload } from '@/lib/ingest-helpers';
 export const dynamic = 'force-dynamic';
 
 interface SupplierData {
-    Id: number;
-    Name: string;
-    Nip?: string;
+    id: number;
+    name: string;
+    nip?: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -34,20 +34,20 @@ export async function POST(request: NextRequest) {
         for (const supplier of data) {
             try {
                 await prisma.supplier.upsert({
-                    where: { id: supplier.Id },
+                    where: { id: supplier.id },
                     create: {
-                        id: supplier.Id,
-                        name: supplier.Name,
-                        nip: supplier.Nip || null,
+                        id: supplier.id,
+                        name: supplier.name,
+                        nip: supplier.nip || null,
                     },
                     update: {
-                        name: supplier.Name,
-                        nip: supplier.Nip || null,
+                        name: supplier.name,
+                        nip: supplier.nip || null,
                     },
                 });
                 successCount++;
             } catch (err) {
-                console.error(`[${syncRunId}] Failed to upsert supplier ${supplier.Id}:`, err);
+                console.error(`[${syncRunId}] Failed to upsert supplier ${supplier.id}:`, err);
                 // Continue processing others
             }
         }
