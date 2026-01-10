@@ -8,7 +8,8 @@ export type DatePreset =
     | 'currentWeek' | 'currentMonth' | 'currentQuarter' | 'currentYear'
     | 'lastMonth' | 'lastQuarter' | 'lastYear'
     | 'last7Days' | 'last30Days' | 'last60Days' | 'last90Days'
-    | 'custom';
+    | 'customDays'
+    | 'customRange';
 
 interface PlanFormProps {
     suppliers: Supplier[];
@@ -20,9 +21,13 @@ interface PlanFormProps {
     daysOfCoverage: number;
     activePreset: DatePreset;
     customAnalysisDays: number;
+    customStartDate?: Date;
+    customEndDate?: Date;
     onDaysOfCoverageChange: (value: number) => void;
     onPresetChange: (preset: DatePreset) => void;
     onCustomAnalysisDaysChange: (value: number) => void;
+    onCustomStartDateChange?: (date: Date) => void;
+    onCustomEndDateChange?: (date: Date) => void;
     onCalculate: () => void;
     isCalculating: boolean;
 }
@@ -39,7 +44,8 @@ const PRESET_LABELS: Record<DatePreset, string> = {
     last30Days: 'Ostatnie 30 dni',
     last60Days: 'Ostatnie 60 dni',
     last90Days: 'Ostatnie 90 dni',
-    custom: 'Ostatnie N dni',
+    customDays: 'Ostatnie N dni',
+    customRange: 'Własny zakres dat',
 };
 
 const PRESET_KEYS = Object.keys(PRESET_LABELS) as DatePreset[];
@@ -54,9 +60,13 @@ export default function PlanForm({
     daysOfCoverage,
     activePreset,
     customAnalysisDays,
+    customStartDate,
+    customEndDate,
     onDaysOfCoverageChange,
     onPresetChange,
     onCustomAnalysisDaysChange,
+    onCustomStartDateChange,
+    onCustomEndDateChange,
     onCalculate,
     isCalculating,
 }: PlanFormProps) {
@@ -149,12 +159,12 @@ export default function PlanForm({
                                 </div>
                             )}
                         </div>
-                        {activePreset === 'custom' && (
+                        {activePreset === 'customDays' && (
                             <div className="w-24">
                                 <input
                                     type="number"
                                     min="1"
-                                    max="365"
+                                    max="450"
                                     value={customAnalysisDays}
                                     onChange={(e) => onCustomAnalysisDaysChange(Number(e.target.value))}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none animate-in fade-in zoom-in-95 duration-200"
@@ -163,6 +173,32 @@ export default function PlanForm({
                             </div>
                         )}
                     </div>
+
+                    {activePreset === 'customRange' && (
+                        <div className="grid grid-cols-2 gap-3 mt-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                            <div>
+                                <label className="text-xs font-medium text-gray-600 mb-1 block">Data od:</label>
+                                <input
+                                    type="date"
+                                    value={customStartDate ? customStartDate.toISOString().split('T')[0] : ''}
+                                    onChange={(e) => onCustomStartDateChange?.(new Date(e.target.value))}
+                                    max={customEndDate ? customEndDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs font-medium text-gray-600 mb-1 block">Data do:</label>
+                                <input
+                                    type="date"
+                                    value={customEndDate ? customEndDate.toISOString().split('T')[0] : ''}
+                                    onChange={(e) => onCustomEndDateChange?.(new Date(e.target.value))}
+                                    min={customStartDate ? customStartDate.toISOString().split('T')[0] : ''}
+                                    max={new Date().toISOString().split('T')[0]}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
+                                />
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 

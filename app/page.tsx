@@ -23,6 +23,8 @@ export default function Home() {
   const [daysOfCoverage, setDaysOfCoverage] = useState(30);
   const [activePreset, setActivePreset] = useState<DatePreset>('last30Days');
   const [customAnalysisDays, setCustomAnalysisDays] = useState(14);
+  const [customStartDate, setCustomStartDate] = useState<Date>();
+  const [customEndDate, setCustomEndDate] = useState<Date>();
   const [planData, setPlanData] = useState<StockPlanRow[]>([]);
   const [isCalculating, setIsCalculating] = useState(false);
   const [validationError, setValidationError] = useState('');
@@ -134,8 +136,15 @@ export default function Home() {
       case 'last90Days':
         start.setDate(start.getDate() - 90);
         return { start };
-      case 'custom':
+      case 'customDays':
         start.setDate(start.getDate() - customAnalysisDays);
+        return { start };
+      case 'customRange':
+        if (customStartDate && customEndDate) {
+          return { start: customStartDate, end: customEndDate };
+        }
+        // Fallback if dates not set
+        start.setDate(start.getDate() - 30);
         return { start };
       default:
         start.setDate(start.getDate() - 30);
@@ -162,9 +171,19 @@ export default function Home() {
       setValidationError('Nieprawidłowa wartość zapasu');
       return;
     }
-    if (activePreset === 'custom' && customAnalysisDays < 1) {
+    if (activePreset === 'customDays' && customAnalysisDays < 1) {
       setValidationError('Okres analizy musi wynosić co najmniej 1 dzień');
       return;
+    }
+    if (activePreset === 'customRange') {
+      if (!customStartDate || !customEndDate) {
+        setValidationError('Proszę wybrać daty początkową i końcową');
+        return;
+      }
+      if (customStartDate > customEndDate) {
+        setValidationError('Data początkowa nie może być późniejsza niż końcowa');
+        return;
+      }
     }
 
     setValidationError('');
@@ -214,7 +233,10 @@ export default function Home() {
       last30Days: 'Ostatnie 30 dni',
       last60Days: 'Ostatnie 60 dni',
       last90Days: 'Ostatnie 90 dni',
-      custom: `Ostatnie ${customAnalysisDays} dni`
+      customDays: `Ostatnie ${customAnalysisDays} dni`,
+      customRange: customStartDate && customEndDate
+        ? `${customStartDate.toLocaleDateString('pl-PL')} - ${customEndDate.toLocaleDateString('pl-PL')}`
+        : 'Własny zakres dat'
     };
     return labels[activePreset] || 'Ostatnie 30 dni';
   };
@@ -275,9 +297,13 @@ export default function Home() {
             daysOfCoverage={daysOfCoverage}
             activePreset={activePreset}
             customAnalysisDays={customAnalysisDays}
+            customStartDate={customStartDate}
+            customEndDate={customEndDate}
             onDaysOfCoverageChange={setDaysOfCoverage}
             onPresetChange={setActivePreset}
             onCustomAnalysisDaysChange={setCustomAnalysisDays}
+            onCustomStartDateChange={setCustomStartDate}
+            onCustomEndDateChange={setCustomEndDate}
             onCalculate={handleCalculate}
             isCalculating={isCalculating}
           />
