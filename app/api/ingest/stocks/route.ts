@@ -11,6 +11,10 @@ interface StockData {
     reservedStock: number;
 }
 
+// Track which sync runs have already had their first batch processed
+// This prevents deleting all stocks on every batch
+const processedSyncRuns = new Set<string>();
+
 export async function POST(request: NextRequest) {
     const authError = validateAuth(request);
     if (authError) return authError;
@@ -20,39 +24,57 @@ export async function POST(request: NextRequest) {
 
     const { clientId, syncRunId, data } = payloadOrError;
 
-    // DEBUG: Log first few items to see structure
-    console.log(`[${syncRunId}] Received ${data.length} stocks`);
-    console.log(`[${syncRunId}] First 3 stocks:`, JSON.stringify(data.slice(0, 3), null, 2));
+    const isFirstBatch = !processedSyncRuns.has(syncRunId);
+
+    console.log(`[${syncRunId}] ${isFirstBatch ? 'FIRST' : 'SUBSEQUENT'} BATCH - Received ${data.length} stocks`);
+    if (data.length > 0) {
+        console.log(`[${syncRunId}] Sample stock:`, JSON.stringify(data[0], null, 2));
+    }
 
     try {
-        // CRITICAL: Stocks are a full snapshot - delete all first
-        await prisma.stock.deleteMany({});
-        console.log(`[${syncRunId}] Deleted all existing stocks`);
+        if (isFirstBatch) {
+            // Only delete all stocks on the FIRST batch of a new sync run
+            console.log(`[${syncRunId}] First batch detected - Deleting all existing stocks`);
+            await prisma.stock.deleteMany({});
+            processedSyncRuns.add(syncRunId);
+        }
 
-        // Insert new stocks in batches to avoid memory issues
-        const batchSize = 1000;
-        let inserted = 0;
-
-        for (let i = 0; i < data.length; i += batchSize) {
-            const batch = data.slice(i, i + batchSize);
-            await prisma.stock.createMany({
-                data: batch.map((stock) => ({
+        // Use upsert to safely handle duplicates and overlaps
+        let processed = 0;
+        for (const stock of data) {
+            await prisma.stock.upsert({
+                where: {
+                    productId_branchId: {
+                        productId: stock.productId,
+                        branchId: stock.branchId,
+                    },
+                },
+                create: {
                     productId: stock.productId,
                     branchId: stock.branchId,
                     quantity: stock.currentStock,
                     reserved: stock.reservedStock,
-                })),
-                skipDuplicates: true,
+                },
+                update: {
+                    quantity: stock.currentStock,
+                    reserved: stock.reservedStock,
+                },
             });
-            inserted += batch.length;
-            console.log(`[${syncRunId}] Inserted ${inserted}/${data.length} stocks`);
+            processed++;
+
+            // Log progress every 50 records
+            if (processed % 50 === 0) {
+                console.log(`[${syncRunId}] Processed ${processed}/${data.length} stocks`);
+            }
         }
 
-        console.log(`[${syncRunId}] Stock sync complete: ${inserted} entries`);
+        console.log(`[${syncRunId}] Batch complete: ${processed} stocks processed`);
 
-        return NextResponse.json({ success: true, count: inserted });
+        return NextResponse.json({ success: true, count: processed });
     } catch (error) {
         console.error(`[${syncRunId}] Stocks sync error:`, error);
+        // Remove from processed set on error so next attempt can retry from scratch
+        processedSyncRuns.delete(syncRunId);
         return NextResponse.json({ error: 'Database error' }, { status: 500 });
     }
 }
