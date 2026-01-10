@@ -20,6 +20,10 @@ export async function POST(request: NextRequest) {
 
     const { clientId, syncRunId, data } = payloadOrError;
 
+    // DEBUG: Log first few items to see structure
+    console.log(`[${syncRunId}] Received ${data.length} stocks`);
+    console.log(`[${syncRunId}] First 3 stocks:`, JSON.stringify(data.slice(0, 3), null, 2));
+
     try {
         // CRITICAL: Stocks are a full snapshot - delete all first
         await prisma.stock.deleteMany({});
