@@ -21,28 +21,32 @@ export async function POST(request: NextRequest) {
     const { clientId, syncRunId, data } = payloadOrError;
 
     try {
-        const operations = data.map((product) =>
-            prisma.product.upsert({
-                where: { id: product.Id },
-                create: {
-                    id: product.Id,
-                    sku: product.Sku,
-                    name: product.Name,
-                    supplierId: product.SupplierId || null,
-                },
-                update: {
-                    sku: product.Sku,
-                    name: product.Name,
-                    supplierId: product.SupplierId || null,
-                },
-            })
-        );
+        let successCount = 0;
+        for (const product of data) {
+            try {
+                await prisma.product.upsert({
+                    where: { id: product.Id },
+                    create: {
+                        id: product.Id,
+                        sku: product.Sku,
+                        name: product.Name,
+                        supplierId: product.SupplierId || null,
+                    },
+                    update: {
+                        sku: product.Sku,
+                        name: product.Name,
+                        supplierId: product.SupplierId || null,
+                    },
+                });
+                successCount++;
+            } catch (err) {
+                console.error(`[${syncRunId}] Failed to upsert product ${product.Id}:`, err);
+            }
+        }
 
-        await prisma.$transaction(operations);
+        console.log(`[${syncRunId}] Synced ${successCount}/${data.length} products`);
 
-        console.log(`[${syncRunId}] Synced ${data.length} products for client ${clientId}`);
-
-        return NextResponse.json({ success: true, count: data.length });
+        return NextResponse.json({ success: true, count: successCount });
     } catch (error) {
         console.error(`[${syncRunId}] Products sync error:`, error);
         return NextResponse.json({ error: 'Database error' }, { status: 500 });

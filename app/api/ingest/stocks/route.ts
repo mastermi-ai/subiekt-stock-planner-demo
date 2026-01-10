@@ -21,23 +21,32 @@ export async function POST(request: NextRequest) {
     const { clientId, syncRunId, data } = payloadOrError;
 
     try {
-        // CRITICAL: Stocks are a full snapshot, not incremental
-        // Delete all existing stocks before inserting fresh data
+        // CRITICAL: Stocks are a full snapshot - delete all first
         await prisma.stock.deleteMany({});
+        console.log(`[${syncRunId}] Deleted all existing stocks`);
 
-        // Insert new stocks
-        await prisma.stock.createMany({
-            data: data.map((stock) => ({
-                productId: stock.ProductId,
-                branchId: stock.BranchId,
-                quantity: stock.CurrentStock,
-                reserved: stock.ReservedStock,
-            })),
-        });
+        // Insert new stocks in batches to avoid memory issues
+        const batchSize = 1000;
+        let inserted = 0;
 
-        console.log(`[${syncRunId}] Replaced all stocks with ${data.length} entries for client ${clientId}`);
+        for (let i = 0; i < data.length; i += batchSize) {
+            const batch = data.slice(i, i + batchSize);
+            await prisma.stock.createMany({
+                data: batch.map((stock) => ({
+                    productId: stock.ProductId,
+                    branchId: stock.BranchId,
+                    quantity: stock.CurrentStock,
+                    reserved: stock.ReservedStock,
+                })),
+                skipDuplicates: true,
+            });
+            inserted += batch.length;
+            console.log(`[${syncRunId}] Inserted ${inserted}/${data.length} stocks`);
+        }
 
-        return NextResponse.json({ success: true, count: data.length });
+        console.log(`[${syncRunId}] Stock sync complete: ${inserted} entries`);
+
+        return NextResponse.json({ success: true, count: inserted });
     } catch (error) {
         console.error(`[${syncRunId}] Stocks sync error:`, error);
         return NextResponse.json({ error: 'Database error' }, { status: 500 });

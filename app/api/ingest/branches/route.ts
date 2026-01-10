@@ -20,26 +20,30 @@ export async function POST(request: NextRequest) {
     const { clientId, syncRunId, data } = payloadOrError;
 
     try {
-        const operations = data.map((branch) =>
-            prisma.branch.upsert({
-                where: { id: branch.Id },
-                create: {
-                    id: branch.Id,
-                    name: branch.Name,
-                    symbol: branch.Symbol,
-                },
-                update: {
-                    name: branch.Name,
-                    symbol: branch.Symbol,
-                },
-            })
-        );
+        let successCount = 0;
+        for (const branch of data) {
+            try {
+                await prisma.branch.upsert({
+                    where: { id: branch.Id },
+                    create: {
+                        id: branch.Id,
+                        name: branch.Name,
+                        symbol: branch.Symbol,
+                    },
+                    update: {
+                        name: branch.Name,
+                        symbol: branch.Symbol,
+                    },
+                });
+                successCount++;
+            } catch (err) {
+                console.error(`[${syncRunId}] Failed to upsert branch ${branch.Id}:`, err);
+            }
+        }
 
-        await prisma.$transaction(operations);
+        console.log(`[${syncRunId}] Synced ${successCount}/${data.length} branches for client ${clientId}`);
 
-        console.log(`[${syncRunId}] Synced ${data.length} branches for client ${clientId}`);
-
-        return NextResponse.json({ success: true, count: data.length });
+        return NextResponse.json({ success: true, count: successCount });
     } catch (error) {
         console.error(`[${syncRunId}] Branches sync error:`, error);
         return NextResponse.json({ error: 'Database error' }, { status: 500 });

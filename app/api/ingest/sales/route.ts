@@ -21,39 +21,38 @@ export async function POST(request: NextRequest) {
     const { clientId, syncRunId, data } = payloadOrError;
 
     try {
-        // Upsert sales with deduplication by productId + branchId + date
-        // Aggregate quantities for duplicates
-        const operations = data.map((sale) => {
-            const saleDate = new Date(sale.Date);
+        let successCount = 0;
+        for (const sale of data) {
+            try {
+                const saleDate = new Date(sale.Date);
 
-            return prisma.sale.upsert({
-                where: {
-                    productId_branchId_date: {
+                await prisma.sale.upsert({
+                    where: {
+                        productId_branchId_date: {
+                            productId: sale.ProductId,
+                            branchId: sale.BranchId,
+                            date: saleDate,
+                        },
+                    },
+                    create: {
                         productId: sale.ProductId,
                         branchId: sale.BranchId,
                         date: saleDate,
+                        quantity: sale.Quantity,
                     },
-                },
-                create: {
-                    productId: sale.ProductId,
-                    branchId: sale.BranchId,
-                    date: saleDate,
-                    quantity: sale.Quantity,
-                },
-                update: {
-                    // On conflict, add quantities (handle potential duplicates in source)
-                    quantity: {
-                        increment: sale.Quantity,
+                    update: {
+                        quantity: { increment: sale.Quantity },
                     },
-                },
-            });
-        });
+                });
+                successCount++;
+            } catch (err) {
+                console.error(`[${syncRunId}] Failed to upsert sale:`, err);
+            }
+        }
 
-        await prisma.$transaction(operations);
+        console.log(`[${syncRunId}] Synced ${successCount}/${data.length} sales`);
 
-        console.log(`[${syncRunId}] Synced ${data.length} sales for client ${clientId}`);
-
-        return NextResponse.json({ success: true, count: data.length });
+        return NextResponse.json({ success: true, count: successCount });
     } catch (error) {
         console.error(`[${syncRunId}] Sales sync error:`, error);
         return NextResponse.json({ error: 'Database error' }, { status: 500 });
