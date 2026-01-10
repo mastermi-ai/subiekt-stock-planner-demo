@@ -22,29 +22,41 @@ export async function POST(request: NextRequest) {
     const { clientId, syncRunId, data } = payloadOrError;
 
     try {
-        // Upsert suppliers
-        const operations = data.map((supplier) =>
-            prisma.supplier.upsert({
-                where: { id: supplier.Id },
-                create: {
-                    id: supplier.Id,
-                    name: supplier.Name,
-                    nip: supplier.Nip || null,
-                },
-                update: {
-                    name: supplier.Name,
-                    nip: supplier.Nip || null,
-                },
-            })
-        );
+        console.log(`[${syncRunId}] Processing ${data.length} suppliers for client ${clientId}`);
 
-        await prisma.$transaction(operations);
+        // Log first item to debug
+        if (data.length > 0) {
+            console.log(`[${syncRunId}] Sample supplier:`, JSON.stringify(data[0]));
+        }
 
-        console.log(`[${syncRunId}] Synced ${data.length} suppliers for client ${clientId}`);
+        // Process suppliers sequentially (avoid transaction timeout on large batches)
+        let successCount = 0;
+        for (const supplier of data) {
+            try {
+                await prisma.supplier.upsert({
+                    where: { id: supplier.Id },
+                    create: {
+                        id: supplier.Id,
+                        name: supplier.Name,
+                        nip: supplier.Nip || null,
+                    },
+                    update: {
+                        name: supplier.Name,
+                        nip: supplier.Nip || null,
+                    },
+                });
+                successCount++;
+            } catch (err) {
+                console.error(`[${syncRunId}] Failed to upsert supplier ${supplier.Id}:`, err);
+                // Continue processing others
+            }
+        }
+
+        console.log(`[${syncRunId}] Synced ${successCount}/${data.length} suppliers successfully`);
 
         return NextResponse.json({
             success: true,
-            count: data.length
+            count: successCount
         });
     } catch (error) {
         console.error(`[${syncRunId}] Suppliers sync error:`, error);
