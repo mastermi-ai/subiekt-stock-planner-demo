@@ -53,5 +53,6 @@ model Sale {
   date      DateTime
   quantity  Float
 
-  @@unique([productId, branchId, date])
+  @@unique([productId, branchId, date, quantity], name: "sale_unique_key")
 }
+

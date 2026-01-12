@@ -95,8 +95,8 @@ export function calculateStockPlan({
         // Calculate needed quantity for coverage period
         const neededForPeriod = Math.ceil(avgDailySales * daysOfCoverage);
 
-        // Calculate quantity to order
-        const toOrder = Math.max(0, neededForPeriod - currentStock);
+        // Calculate quantity to order (can be negative if overstocked)
+        const toOrder = neededForPeriod - currentStock;
 
         return {
             productId: product.id,
