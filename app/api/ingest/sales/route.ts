@@ -26,28 +26,17 @@ export async function POST(request: NextRequest) {
             try {
                 const saleDate = new Date(sale.date);
 
-                await prisma.sale.upsert({
-                    where: {
-                        sale_unique_key: {
-                            productId: sale.productId,
-                            branchId: sale.branchId,
-                            date: saleDate,
-                            quantity: sale.quantity,
-                        },
-                    },
-                    create: {
+                await prisma.sale.create({
+                    data: {
                         productId: sale.productId,
                         branchId: sale.branchId,
                         date: saleDate,
                         quantity: sale.quantity,
                     },
-                    update: {
-                        quantity: sale.quantity, // Set instead of increment - this is re-sync
-                    },
                 });
                 successCount++;
             } catch (err) {
-                console.error(`[${syncRunId}] Failed to upsert sale:`, err);
+                console.error(`[${syncRunId}] Failed to create sale:`, err);
             }
         }
 

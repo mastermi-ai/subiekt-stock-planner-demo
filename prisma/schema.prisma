@@ -52,7 +52,5 @@ model Sale {
   branch    Branch   @relation(fields: [branchId], references: [id])
   date      DateTime
   quantity  Float
-
-  @@unique([productId, branchId, date, quantity], name: "sale_unique_key")
 }
 
