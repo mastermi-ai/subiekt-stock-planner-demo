@@ -28,10 +28,11 @@ export async function POST(request: NextRequest) {
 
                 await prisma.sale.upsert({
                     where: {
-                        productId_branchId_date: {
+                        sale_unique_key: {
                             productId: sale.productId,
                             branchId: sale.branchId,
                             date: saleDate,
+                            quantity: sale.quantity,
                         },
                     },
                     create: {
@@ -41,7 +42,7 @@ export async function POST(request: NextRequest) {
                         quantity: sale.quantity,
                     },
                     update: {
-                        quantity: { increment: sale.quantity },
+                        quantity: sale.quantity, // Set instead of increment - this is re-sync
                     },
                 });
                 successCount++;
