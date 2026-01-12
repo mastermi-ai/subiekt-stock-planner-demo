@@ -160,8 +160,8 @@ export default function PlanTable({ data, daysOfCoverage }: PlanTableProps) {
                                         </td>
                                         <td className="px-4 py-3 text-sm text-right text-gray-700">{row.avgDailySales.toFixed(2)}</td>
                                         <td className="px-4 py-3 text-sm text-right text-gray-700">{row.neededForPeriod}</td>
-                                        <td className={`px-4 py-3 text-sm text-right font-semibold ${row.toOrder > 0 ? 'text-blue-600' : 'text-gray-900'}`}>
-                                            {row.toOrder > 0 ? row.toOrder : '-'}
+                                        <td className={`px-4 py-3 text-sm text-right font-semibold ${row.toOrder > 0 ? 'text-blue-600' : row.toOrder < 0 ? 'text-red-600' : 'text-gray-900'}`}>
+                                            {row.toOrder}
                                         </td>
                                     </tr>
                                 );
