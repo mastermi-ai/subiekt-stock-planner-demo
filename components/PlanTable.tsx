@@ -127,7 +127,8 @@ export default function PlanTable({ data, daysOfCoverage }: PlanTableProps) {
                             <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">SKU</th>
                             <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Nazwa produktu</th>
                             <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Aktualny stan</th>
-                            <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Średnia dzienna sprzedaż</th>
+                            <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Sprzedaż (okres)</th>
+                            <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Średnia dzienna</th>
                             <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">
                                 Potrzebne na {daysOfCoverage} dni
                             </th>
@@ -158,6 +159,7 @@ export default function PlanTable({ data, daysOfCoverage }: PlanTableProps) {
                                         <td className={`px-4 py-3 text-sm text-right ${row.currentStock === 0 ? 'text-red-600 font-bold' : 'text-gray-700'}`}>
                                             {row.currentStock}
                                         </td>
+                                        <td className="px-4 py-3 text-sm text-right text-gray-700 font-medium">{row.totalSold}</td>
                                         <td className="px-4 py-3 text-sm text-right text-gray-700">{row.avgDailySales.toFixed(2)}</td>
                                         <td className="px-4 py-3 text-sm text-right text-gray-700">{row.neededForPeriod}</td>
                                         <td className={`px-4 py-3 text-sm text-right font-semibold ${row.toOrder > 0 ? 'text-blue-600' : row.toOrder < 0 ? 'text-red-600' : 'text-gray-900'}`}>

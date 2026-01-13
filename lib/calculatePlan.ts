@@ -19,6 +19,7 @@ export type StockPlanRow = {
     neededForPeriod: number;
     toOrder: number;
     supplierId: string; // Added for reference
+    totalSold: number; // Added: Total sales in period
 };
 
 export function calculateStockPlan({
@@ -106,7 +107,8 @@ export function calculateStockPlan({
             avgDailySales,
             neededForPeriod,
             toOrder,
-            supplierId: product.supplierId || ''
+            supplierId: product.supplierId || '',
+            totalSold
         };
     });
 }
