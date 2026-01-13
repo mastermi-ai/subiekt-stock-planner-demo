@@ -33,11 +33,11 @@ export default function Home() {
     async function loadData() {
       try {
         setIsLoadingData(true);
-        // Fetch 90 days of sales data (optimized for Render Free 512MB RAM limit)
+        // Fetch 450 days of sales data (full history for Render Standard 2GB RAM)
         const [branchesData, productsData, salesData, suppliersData] = await Promise.all([
           fetchBranches(),
           fetchProducts(),
-          fetchSales(90),  // OPTIMIZED: Reduced from 450 to prevent OOM on Render Free
+          fetchSales(450),  // RESTORED: Full history supported on Render Standard 2GB
           fetchSuppliers()
         ]);
 
