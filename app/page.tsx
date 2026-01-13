@@ -33,11 +33,11 @@ export default function Home() {
     async function loadData() {
       try {
         setIsLoadingData(true);
-        // Fetch enough sales data to cover "Last Year" preset (at least 450 days back to be safe)
+        // Fetch 90 days of sales data (optimized for Render Free 512MB RAM limit)
         const [branchesData, productsData, salesData, suppliersData] = await Promise.all([
           fetchBranches(),
           fetchProducts(),
-          fetchSales(450),  // CRITICAL: Must be >= 365 days to support "Previous Year" analysis
+          fetchSales(90),  // OPTIMIZED: Reduced from 450 to prevent OOM on Render Free
           fetchSuppliers()
         ]);
 
