@@ -67,13 +67,14 @@ export default function PdfButton({
                 row.sku,
                 row.name,
                 row.currentStock,
+                row.totalSold,
                 row.neededForPeriod,
                 row.toOrder
             ]);
 
             autoTable(doc, {
                 startY: 55,
-                head: [['LP', 'SKU', 'Nazwa produktu', 'Aktualny stan', `Potrzebne (${daysOfCoverage} dni)`, 'Do zamówienia']],
+                head: [['LP', 'SKU', 'Nazwa produktu', 'Stan', 'Sprzedaż', `Potrz. (${daysOfCoverage} dni)`, 'Do zam.']],
                 body: tableData,
                 theme: 'grid',
                 headStyles: {
@@ -90,9 +91,10 @@ export default function PdfButton({
                     0: { cellWidth: 10 }, // LP
                     1: { cellWidth: 25 }, // SKU
                     2: { cellWidth: 'auto' }, // Name
-                    3: { cellWidth: 20, halign: 'right' }, // Stock
-                    4: { cellWidth: 25, halign: 'right' }, // Needed
-                    5: { cellWidth: 25, halign: 'right', fontStyle: 'bold' } // To Order
+                    3: { cellWidth: 15, halign: 'right' }, // Stock
+                    4: { cellWidth: 15, halign: 'right' }, // Sales
+                    5: { cellWidth: 20, halign: 'right' }, // Needed
+                    6: { cellWidth: 20, halign: 'right', fontStyle: 'bold' } // To Order
                 }
             });
 

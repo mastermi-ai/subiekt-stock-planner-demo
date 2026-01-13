@@ -19,6 +19,7 @@ export default function ExportButton({ data, supplierName, daysOfCoverage, analy
             'SKU': row.sku,
             'Nazwa produktu': row.name,
             'Aktualny stan': row.currentStock,
+            'Sprzedaż (okres)': row.totalSold,
             'Średnia dzienna sprzedaż': row.avgDailySales.toFixed(2),
             [`Potrzebne na ${daysOfCoverage} dni`]: row.neededForPeriod,
             'Proponowane zamówienie': row.toOrder
