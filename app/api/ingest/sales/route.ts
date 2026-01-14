@@ -27,15 +27,34 @@ export async function POST(request: NextRequest) {
             try {
                 const saleDate = new Date(sale.date);
 
-                await prisma.sale.create({
-                    data: {
+                // Check if sale already exists
+                const existing = await prisma.sale.findFirst({
+                    where: {
                         productId: sale.productId,
-                        documentId: sale.documentId,
                         branchId: sale.branchId,
                         date: saleDate,
-                        quantity: sale.quantity,
+                        documentId: sale.documentId,
                     },
                 });
+
+                if (existing) {
+                    // Update existing
+                    await prisma.sale.update({
+                        where: { id: existing.id },
+                        data: { quantity: sale.quantity },
+                    });
+                } else {
+                    // Create new
+                    await prisma.sale.create({
+                        data: {
+                            productId: sale.productId,
+                            documentId: sale.documentId,
+                            branchId: sale.branchId,
+                            date: saleDate,
+                            quantity: sale.quantity,
+                        },
+                    });
+                }
                 successCount++;
             } catch (err) {
                 console.error(`[${syncRunId}] Failed to create sale:`, err);
