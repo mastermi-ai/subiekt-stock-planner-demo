@@ -41,7 +41,19 @@ export async function POST(request: NextRequest) {
 
         // Use upsert to safely handle duplicates and overlaps
         let processed = 0;
+        let skipped = 0;
         for (const stock of data) {
+            // Check if product exists first
+            const productExists = await prisma.product.findUnique({
+                where: { id: stock.productId },
+                select: { id: true }
+            });
+
+            if (!productExists) {
+                skipped++;
+                continue; // Skip if product doesn't exist
+            }
+
             await prisma.stock.upsert({
                 where: {
                     productId_branchId: {
@@ -68,9 +80,12 @@ export async function POST(request: NextRequest) {
             }
         }
 
+        if (skipped > 0) {
+            console.log(`[${syncRunId}] Skipped ${skipped} stocks for non-existent products`);
+        }
         console.log(`[${syncRunId}] Batch complete: ${processed} stocks processed`);
 
-        return NextResponse.json({ success: true, count: processed });
+        return NextResponse.json({ success: true, count: processed, skipped });
     } catch (error) {
         console.error(`[${syncRunId}] Stocks sync error:`, error);
         // Remove from processed set on error so next attempt can retry from scratch
