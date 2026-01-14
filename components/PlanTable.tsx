@@ -114,7 +114,7 @@ export default function PlanTable({ data, daysOfCoverage }: PlanTableProps) {
                     Do zamówienia: <span className="font-bold">{processedData.filter(r => r.toOrder > 0).length}</span> pozycji
                 </div>
                 <div>
-                    Łączna ilość sztuk: <span className="font-bold">{processedData.reduce((sum, r) => sum + r.toOrder, 0)}</span> szt.
+                    Łączna ilość sztuk: <span className="font-bold">{processedData.reduce((sum, r) => sum + Math.max(0, r.toOrder), 0)}</span> szt.
                 </div>
             </div>
 
