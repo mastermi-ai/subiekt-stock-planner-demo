@@ -6,6 +6,7 @@ export const dynamic = 'force-dynamic';
 
 interface SaleData {
     productId: number;
+    documentId: number;
     date: string; // ISO date string
     quantity: number;
     branchId: number;
@@ -29,6 +30,7 @@ export async function POST(request: NextRequest) {
                 await prisma.sale.create({
                     data: {
                         productId: sale.productId,
+                        documentId: sale.documentId,
                         branchId: sale.branchId,
                         date: saleDate,
                         quantity: sale.quantity,
