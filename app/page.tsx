@@ -6,8 +6,7 @@ import PlanForm, { DatePreset } from '@/components/PlanForm';
 import PlanTable from '@/components/PlanTable';
 import ExportButton from '@/components/ExportButton';
 import PdfButton from '@/components/PdfButton';
-import { fetchBranches, fetchProducts, fetchSales, fetchSuppliers } from '@/lib/api';
-import { Branch, Product, Sale, Supplier } from '@/lib/mockData';
+import { branches as mockBranches, products as mockProducts, sales as mockSales, suppliers as mockSuppliers } from '@/lib/mockData';
 
 export default function Home() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -30,36 +29,20 @@ export default function Home() {
   const [validationError, setValidationError] = useState('');
 
   useEffect(() => {
-    async function loadData() {
-      try {
-        setIsLoadingData(true);
-        // Fetch 450 days of sales data (full history for Render Standard 2GB RAM)
-        const [branchesData, productsData, salesData, suppliersData] = await Promise.all([
-          fetchBranches(),
-          fetchProducts(),
-          fetchSales(450),  // RESTORED: Full history supported on Render Standard 2GB
-          fetchSuppliers()
-        ]);
+    // Simulate data loading with Mock Data (No Real API)
+    setIsLoadingData(true);
+    setTimeout(() => {
+      setBranches(mockBranches);
+      setProducts(mockProducts);
+      setSales(mockSales);
+      setSuppliers(mockSuppliers);
 
-        setBranches(branchesData);
-        setProducts(productsData);
-        setSales(salesData);
-        setSuppliers(suppliersData);
-
-        // Auto-select all branches on first load
-        if (branchesData.length > 0) {
-          setSelectedBranchIds(branchesData.map(b => b.id));
-        }
-
-      } catch (err) {
-        console.error('Failed to load data:', err);
-        setDataError('Nie udało się pobrać danych z serwera.');
-      } finally {
-        setIsLoadingData(false);
+      // Auto-select all branches
+      if (mockBranches.length > 0) {
+        setSelectedBranchIds(mockBranches.map(b => b.id));
       }
-    }
-
-    loadData();
+      setIsLoadingData(false);
+    }, 800); // Small artificial delay for realism
   }, []);
 
   const productSupplierMap = useMemo(() => {
