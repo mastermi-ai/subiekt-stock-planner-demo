@@ -6,7 +6,8 @@ import PlanForm, { DatePreset } from '@/components/PlanForm';
 import PlanTable from '@/components/PlanTable';
 import ExportButton from '@/components/ExportButton';
 import PdfButton from '@/components/PdfButton';
-import { branches as mockBranches, products as mockProducts, sales as mockSales, suppliers as mockSuppliers } from '@/lib/mockData';
+import { fetchBranches, fetchProducts, fetchSales, fetchSuppliers } from '@/lib/api';
+import { Branch, Product, Sale, Supplier, branches as mockBranches, products as mockProducts, sales as mockSales, suppliers as mockSuppliers } from '@/lib/mockData';
 
 export default function Home() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
