@@ -59,7 +59,7 @@ export default function Home() {
 
     // 1. Check products with stock in selected branches
     products.forEach(p => {
-      const hasStock = selectedBranchIds.some(bid => (p.stockByBranch[bid] || 0) > 0);
+      const hasStock = selectedBranchIds.some(bid => (p.stockByBranch[bid]?.quantity || 0) > 0);
       if (hasStock) {
         activeSupplierIds.add(p.supplierId);
       }
